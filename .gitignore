@@ -1,0 +1,7 @@
+*.exe
+*.zip
+*.o
+*.pdf
+fft_original_example.cpp
+sample
+.vscode
