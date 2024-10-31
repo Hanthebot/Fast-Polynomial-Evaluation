@@ -42,50 +42,12 @@ namespace shk_galoiscpp
    @param y output integer
    @param d output integer (greatest common divisor of a and b)
 */
-void extendedEuclid(Fint a, Fint b, Fint& x, Fint& y, Fint& d);
+// void extendedEuclid(Fint a, Fint b, Fint& x, Fint& y, Fint& d);
 
 
 //------------------------------------------------
 // modular arithmetic functions
 //------------------------------------------------
-
-/**
-   Adds two integers modulo m
-   @param a input integer
-   @param b input integer
-   @param mod input integer (modulus)
-   @returns sum modulo mod
-*/
-inline Fint addModular(Fint a, Fint b, Fint mod)
-{
-   return (a + b) % mod;
-}
-
-
-/**
-   Subtracts two integers modulo m
-   @param a input integer
-   @param b input integer
-   @param mod input integer (modulus)
-   @returns difference modulo mod
-*/
-inline Fint subtractModular(Fint a, Fint b, Fint mod)
-{
-   return (a + (mod - b)) % mod;
-}
-
-/**
-   Multiplies two integers modulo m
-   @param a input integer
-   @param b input integer
-   @param mod input integer (modulus)
-   @returns product modulo mod
-*/
-inline Fint multiplyModular(Fint a, Fint b, Fint mod)
-{
-   return (a * b) % mod;
-}
-
 
 /**
    Determines the multiplicative inverse of an integer modulo mod
@@ -96,37 +58,16 @@ inline Fint multiplyModular(Fint a, Fint b, Fint mod)
 */
 inline Fint inverseModular(Fint a, Fint mod)
 {
-   Fint d,x,y;
+   Fint result;
+   int flag = mpz_invert(result.get_mpz_t(), a.get_mpz_t(), mod.get_mpz_t());
 
-   // compute modular multiplicative inverse of b (exists if d=1)
-   extendedEuclid(a,mod,x,y,d);
-
-   if (d != 1) // if a and m are not relatively prime, there is no inverse.
+   if (flag == 0)
    {
       throw ErrorNoInverse;
    }
 
-   return ( (x>0) ? x : (mod + x) );
+   return result;
 }
-
-
-/**
-   Divides two integers modulo mod
-   @param a input integer (dividend)
-   @param b input integer (divisor)
-   @param mod input integer (modulus)
-   @returns q quotient such that a = q * b modulo mod
-   @throws ErrorNoInverse if mod is not prime relative to a, or ErrorDivideByZero if b=0
-*/
-inline Fint divideModular(Fint a, Fint b, Fint mod)
-{
-   if (b==0)
-   {
-      throw ErrorDivideByZero;
-   }
-   return (a * inverseModular(b,mod)) % mod;
-}
-
 
 } // namespace shk_galoiscpp
 

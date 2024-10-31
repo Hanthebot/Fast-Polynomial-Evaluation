@@ -234,10 +234,8 @@ GFelement operator+(const GFelement& left, const GFelement& right)
    if (left.field != right.field) throw ErrorIncompatibleFields;
 
    GFelement result(left.field);
-
-    result.value = addModular(left.value,
-                                    right.value,
-                                    left.field->getModulus());
+   result.value = left.value + right.value;
+   mpz_mod(result.value.get_mpz_t(), result.value.get_mpz_t(), left.field->getModulus().get_mpz_t());
 
    return result;
 }
@@ -250,10 +248,8 @@ GFelement operator-(const GFelement& left, const GFelement& right)
    if (left.field != right.field) throw ErrorIncompatibleFields;
 
    GFelement result(left.field);
-
-    result.value = subtractModular(left.value,
-                                            right.value,
-                                            left.field->getModulus());
+   result.value = left.value - right.value;
+   mpz_mod(result.value.get_mpz_t(), result.value.get_mpz_t(), left.field->getModulus().get_mpz_t());
 
    return result;
 }
@@ -266,9 +262,8 @@ GFelement operator*(const GFelement& left, const GFelement& right)
    if (left.field != right.field) throw ErrorIncompatibleFields;
 
    GFelement result(left.field);
-   result.value = multiplyModular(left.value,
-                                    right.value,
-                                    left.field->getModulus());
+   result.value = left.value * right.value;
+   result.value %= left.field->getModulus();
 
    return result;
 }
@@ -289,9 +284,8 @@ GFelement operator/(const GFelement& left, const GFelement& right)
 GFelement operator*(Fint left, const GFelement& right)
 {
    GFelement result(right.field);
-   result.value = multiplyModular(left,
-                                    right.value,
-                                    right.field->getModulus());
+   result.value = left * right.value;
+   result.value %= right.field->getModulus();
 
    return result;
 }
@@ -303,9 +297,8 @@ GFelement operator*(const GFelement& left, Fint right)
 {
 
    GFelement result(left.field);
-   result.value = multiplyModular(left.value,
-                                    right,
-                                    left.field->getModulus());
+   result.value = left.value * right;
+   result.value %= left.field->getModulus();
 
    return result;
 }
@@ -317,7 +310,7 @@ GFelement operator/(const GFelement& left, Fint right)
 {
    GFelement result(left.field);
 
-   return left * inverseModular( right, left.field->getModulus() );
+   return left * inverseModular(right, left.field->getModulus());
 }
 
 
@@ -335,7 +328,6 @@ ostream& operator<<(ostream& output, const GFelement& right)
 //------------------------------------------------------
 GFelement GFmultInverse(const GFelement& gfe)
 {
-   // polynomial R is the result to be returned.
    GFelement result(gfe.field);
    result.value = inverseModular(gfe.value, gfe.field->getModulus());
 

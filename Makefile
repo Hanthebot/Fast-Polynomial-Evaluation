@@ -18,22 +18,25 @@ CC     = g++
 CFLAGS = -std=c++11 -Wall -O3 -o
 LFLAGS = -std=c++11 -Wall -O3 -c
 GMP = -lgmp -lgmpxx
-OBJS   = gfelement.o galoisfield.o modular_arith.o fft.o
+OBJS   = gfelement.o galoisfield.o modular_arith.o fft.o util.o
 
-sample: fft_finite.cpp fft_finite.h $(OBJS)
+fft_finite: fft_finite.cpp fft_finite.h $(OBJS)
 	$(CC) $(CFLAGS) fft_finite fft_finite.cpp $(OBJS) $(GMP)
 
-gfelement.o: galois_own/gfelement.h galois_own/gfelement.cpp galois_own/typedefs.h 
-	$(CC) $(LFLAGS) galois_own/gfelement.cpp $(GMP)
+gfelement.o: galois/gfelement.h galois/gfelement.cpp galois/modular_arith.h galois/typedefs.h 
+	$(CC) $(LFLAGS) galois/gfelement.cpp $(GMP)
 
-galoisfield.o: galois_own/galoisfield.h galois_own/galoisfield.cpp galois_own/typedefs.h
-	$(CC) $(LFLAGS) galois_own/galoisfield.cpp $(GMP)
+galoisfield.o: galois/galoisfield.h galois/galoisfield.cpp galois/typedefs.h
+	$(CC) $(LFLAGS) galois/galoisfield.cpp $(GMP)
 
-modular_arith.o: galois_own/modular_arith.h  galois_own/modular_arith.cpp  galois_own/typedefs.h
-	$(CC) $(LFLAGS) galois_own/modular_arith.cpp $(GMP)
+modular_arith.o: galois/modular_arith.h galois/modular_arith.cpp galois/typedefs.h
+	$(CC) $(LFLAGS) galois/modular_arith.cpp $(GMP)
 
 fft.o: fft.cpp fft_finite.h
 	$(CC) $(LFLAGS) fft.cpp $(GMP)
+
+util.o: util.cpp fft_finite.h
+	$(CC) $(LFLAGS) util.cpp $(GMP)
 
 clean:
 	del *.o

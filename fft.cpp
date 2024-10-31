@@ -1,32 +1,21 @@
 #include "fft_finite.h"
-#include <vector>
-#include <map>
 
 using namespace std;
 
-u32 find_ind(u32 w_exp, u32 modulus) {
-    u32 ind = 0;
-    for (u32 i = (modulus >> 1); w_exp && i > 0; i >>= 1) {
-        if (w_exp % 2) ind |= i;
-        w_exp >>= 1;
-    }
-    return ind;
-}
-
 // replaced by example's rev construction
-// u32 rev_bit(u32 w_exp, u32 logn) {
+// u32 find_ind(u32 w_exp, u32 modulus) {
 //     u32 ind = 0;
-//     for (u32 i = (1 << (logn - 1)); w_exp && i > 0; i >>= 1) {
+//     for (u32 i = (modulus >> 1); w_exp && i > 0; i >>= 1) {
 //         if (w_exp % 2) ind |= i;
 //         w_exp >>= 1;
 //     }
 //     return ind;
 // }
+
 /**
     @param arr a polynomial in coefficient form, returned as map of RoU
     @param logn value where 2 ^ logn + 1 = modulo 
  */
-
 void fft(const vector<F>& w, vector<F> &arr, const map<F, u32>& dlog, const vector<u32>& rev, u32 logn, Field& field, Fint& mul_counter) {
     u32 len = 1ULL << logn;
     assert(arr.size() == len);
