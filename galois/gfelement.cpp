@@ -95,6 +95,11 @@ GFelement& GFelement::operator=(const GFelement& right)
    return *this;
 }
 
+GFelement& GFelement::operator=(const Fint& right)
+{
+   this->setX(right);
+   return *this;
+}
 
 
 //------------------------------------------------------

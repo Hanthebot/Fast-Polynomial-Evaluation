@@ -143,6 +143,8 @@ class GFelement
       */
       GFelement& operator=(const GFelement& right);
 
+      GFelement& operator=(const Fint& right);
+
 
       /**
          Returns the negated copy of this GFelement
