@@ -3,14 +3,14 @@
 
 using namespace std;
 
-enum {QUIT, EDIT, PRINT, SET_RANGE} option;
+enum {QUIT, EDIT, PRINT, SET_RANGE} options;
 
 int main() {
     vector<int> vec;
     vec.resize(60, 0);
     span<int> span_vec{vec};
 
-    for (int i = 0; i < vec.size(); ++i)
+    for (size_t i = 0; i < vec.size(); ++i)
         vec[i] = i;
 
     size_t dim = 3;
@@ -24,7 +24,7 @@ int main() {
 
     nd_vector<int> vvecs[] = {vecs, vecs2, vecs3};
 
-    int command, option, ind1, ind2, ind3;
+    int command, ind1, ind2, ind3;
     do {
         cout << "Choose action: " << endl
             << "0. exit" << endl

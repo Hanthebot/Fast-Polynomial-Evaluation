@@ -9,6 +9,8 @@
 
 typedef unsigned int u32;
 
+bool isEqual(const std::span<size_t>& a, const std::span<size_t>& b);
+
 template<typename T>
 class nd_vector {
     private:
@@ -31,7 +33,7 @@ class nd_vector {
         * @param i The index to access.
         * @return nd_vector<T> The sub-vector at the given index.
         */
-        nd_vector<T> operator[](size_t i);
+        nd_vector<T> operator[](size_t i) const;
 
         /**
         * @brief Sets the value at the given index.
@@ -39,14 +41,14 @@ class nd_vector {
         * @param val The value to set.
         * @param i The index at which to set the value.
         */
-        void set_val(const T& val, size_t i);
+        void set_val(const T& val, size_t i) const;
 
         /**
         * @brief Sets a range of values starting at the given index.
         * 
         * @param vec The vector containing the values to set.
         */
-        void set_range(const nd_vector<T>& vec);
+        void set_range(const nd_vector<T>& vec) const;
 
         /**
         * @brief Gets the value at the given index.
@@ -66,6 +68,13 @@ class nd_vector {
         std::span<T> span();
 
         /**
+        * @brief Returns a span of the shape.
+        * 
+        * @return const std::span<size_t> A span of the shape.
+        */
+        const std::span<size_t> getShape() const;
+
+        /**
         * @brief Returns the size of the vector.
         * 
         * @return size_t The size of the vector.
@@ -73,7 +82,14 @@ class nd_vector {
         size_t size() const;
 
         /**
-        * @brief Prepends a dimension to the vector.
+        * @brief Returns the dimension of the vector.
+        * 
+        * @return size_t The dimension of the vector.
+        */
+        size_t getDim() const;
+
+        /**
+        * @brief Prepends a dimension to the vector. For potential future use.
         * 
         * @param v The dimension to prepend.
         * @return nd_vector<T> The resulting vector with the prepended dimension.
@@ -81,13 +97,75 @@ class nd_vector {
         nd_vector<T> dim_prepend(size_t v);
 
         /**
-        * @brief Appends a dimension to the vector.
+        * @brief Appends a dimension to the vector. For potential future use.
         * 
         * @param v The dimension to append.
         * @return nd_vector<T> The resulting vector with the appended dimension.
         */
         nd_vector<T> dim_append(size_t v);
         
+        /**
+        * @brief Sets the values of the vector to the product of the values of the given vectors.
+        *
+        * @param a The first vector.
+        * @param b The second vector. 
+        */
+        void set_mul(const nd_vector<T>& a, const nd_vector<T>& b) const {
+            assert(a.size() == b.size() && "size does not match");
+            assert(size() == a.size() && "size does not match");
+            for (size_t i = 0; i < a.size(); ++i)
+                data[i] = a.get(i) * b.get(i);
+        }
+        
+        /**
+        * @brief Sets the values of the vector to the product of the values of the given vector and scalar.
+        *
+        * @param a The first vector.
+        * @param b The scalar. 
+        */
+        void set_mul(const nd_vector<T>& a, const T& b) const {
+            assert(size() == a.size() && "size does not match");
+            for (size_t i = 0; i < a.size(); ++i)
+                data[i] = a.get(i) * b;
+        }
+
+        /**
+        * @brief Sets the values of the vector to the sum of the values of the given vectors.
+        *
+        * @param a The first vector.
+        * @param b The second vector. 
+        */
+        void set_add(const nd_vector<T>& a, const nd_vector<T>& b) const {
+            assert(a.size() == b.size() && "size does not match");
+            assert(size() == a.size() && "size does not match");
+            for (size_t i = 0; i < a.size(); ++i)
+                data[i] = a.get(i) + b.get(i);
+        }
+
+        /**
+        * @brief Sets the values of the vector to the difference of the values of the given vectors.
+        *
+        * @param a The first vector.
+        * @param b The second vector. 
+        */
+        void set_sub(const nd_vector<T>& a, const nd_vector<T>& b) const {
+            assert(a.size() == b.size() && "size does not match");
+            assert(size() == a.size() && "size does not match");
+            for (size_t i = 0; i < a.size(); ++i)
+                data[i] = a.get(i) - b.get(i);
+        }
+        
+        /**
+        * @brief Swaps the values of the vector with the given vector.
+        *
+        * @param vec The vector to swap with.
+        */
+        void swap(const nd_vector<T>& vec) const {
+            assert(this->dim == vec.dim && "dimension does not match");
+            assert(isEqual(this->shape, vec.shape) && "shape does not match");
+            std::swap_ranges(this->data.begin(), this->data.end(), vec.data.begin());
+        }
+
         /**
         * @brief Outputs the vector to the given output stream.
         * 
@@ -98,7 +176,32 @@ class nd_vector {
         */
         template<typename T_>
         friend std::ostream& operator<<(std::ostream& os, const nd_vector<T_>& vec);
+        template<typename T_>
+        friend std::ostream& print(std::ostream& os, const nd_vector<T_>& vec, std::string prefix);
+        template<typename T_>
+        friend std::istream& operator>>(std::istream& is, nd_vector<T_>& vec);
 };
+
+template<typename T>
+nd_vector<T>::nd_vector(const size_t& dim, const std::span<size_t>& shape, const std::span<T>& data) : dim{dim}, shape{shape}, data{data} {
+    assert(shape.size() == dim && "dimension and shape does not match");
+    u32 length = 1;
+    for (const auto& v : shape)
+        length *= v;
+    assert(length == data.size() && "size does not match");
+}
+
+template<typename T>
+nd_vector<T> nd_vector<T>::operator[](size_t i) const {
+    assert(dim >= 1 && "no inner dimension");
+    assert(i < shape[0] && "index out of bounds");
+    size_t unit = data.size() / shape[0];
+    auto beg_iter = data.begin() + i * unit;
+    return {dim - 1, 
+        shape.subspan(1), 
+        {beg_iter, beg_iter + unit}
+    };
+}
 
 template<typename T>
 inline const T& nd_vector<T>::get(size_t i) const {
@@ -123,25 +226,75 @@ inline std::span<T> nd_vector<T>::span() {
 }
 
 template<typename T>
+inline const std::span<size_t> nd_vector<T>::getShape() const {
+    return shape;
+}
+
+template<typename T>
 inline size_t nd_vector<T>::size() const {
     return data.size();
+}
+
+template<typename T>
+inline size_t nd_vector<T>::getDim() const {
+    return this->dim;
+}
+
+template<typename T>
+std::ostream& print(std::ostream& os, const nd_vector<T>& vec, std::string prefix = "") {
+    if (vec.dim == 0) {
+        os << vec.get() << "\n";
+        return os;
+    }
+    if (vec.dim == 1) {
+        os << prefix <<  "[ ";
+        for (size_t i = 0; i < vec.shape[0]; ++i) {
+            os << vec.get(i) << " ";
+        }
+        os << "]\n";
+        return os;
+    } else {
+        os << prefix << "[ \n";
+        for (size_t i = 0; i < vec.shape[0]; ++i) {
+            print(os, vec[i], "  " + prefix);
+        }
+        os << prefix << "]\n";
+        return os;
+    }
 }
 
 template<typename T>
 std::ostream& operator<<(std::ostream& os, const nd_vector<T>& vec) {
     os << "dim: " << vec.dim << "\n";
     os << "shape: [ ";
-    for (const size_t& s : vec.shape)
-        os << s << " ";
-    os << "]\ndata: ";
-    os << "[ ";
-    for (const T& v : vec.data)
+    for (const auto& v : vec.shape)
         os << v << " ";
     os << "]\n";
+    os << "data: \n";
+    print(os, vec);
     return os;
 }
 
 template<typename T>
-bool isEqual(const std::span<T>& a, const std::span<T>& b);
+std::istream& operator>>(std::istream& is, nd_vector<T>& vec) {
+    for (T& v : vec.data)
+        is >> v;
+    return is;
+}
+
+template<typename T>
+void nd_vector<T>::set_range(const nd_vector<T>& vec) const {
+    // set range if latter dimension are the same, or vec[dim] being 1
+    if (this->dim == vec.dim) {
+        if (this == &vec) return;
+        assert(isEqual(this->shape, vec.shape) && "shape does not match");
+        copy(vec.data.begin(), vec.data.end(), this->data.begin());
+        return;
+    }
+    assert(this->dim > vec.dim && "dimension does not match");
+    for (size_t i = 0; i < this->shape[0]; ++i) {
+        (*this)[i].set_range(vec);
+    }
+}
 
 #endif // ND_VECTOR_H

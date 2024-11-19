@@ -4,14 +4,14 @@
 
 using namespace std;
 
-enum {QUIT, EDIT, PRINT} option;
+enum {QUIT, EDIT, PRINT} options;
 
 int main() {
     vector<int> vec;
     vec.resize(15, 0);
     span<int> span_vec{vec};
 
-    for (int i = 0; i < vec.size(); ++i)
+    for (size_t i = 0; i < vec.size(); ++i)
         vec[i] = i;
 
     span<int> vec1 {vec.begin(), vec.begin() + 10 + 1};
