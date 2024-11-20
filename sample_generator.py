@@ -15,4 +15,4 @@ for i in range(COUNT):
     degree = randint(MIN_DEGREE, MAX_DEGREE)
     l = [str(randint(1, MAX_VAL)) for _ in range(degree + 1)]
     with open(f"sample/input{i+1}.txt", "w", encoding="utf-8") as fil:
-        fil.write(f"{LOG_N}\n{degree}\n{' '.join(l)}")
+        fil.write(f"0 0\n{LOG_N}\n{degree}\n{' '.join(l)}")

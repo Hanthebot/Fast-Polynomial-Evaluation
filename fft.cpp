@@ -40,4 +40,11 @@ void fft(const vector<F>& w, vector<F> &arr, const map<F, u32>& dlog, const vect
             }
         }
     }
+    for (u32 i = 0; i < len; ++i) {
+        if (i < rev[i]) {
+            u = arr[i];
+            arr[i] = arr[rev[i]];
+            arr[rev[i]] = u;
+        }
+    }
 }
