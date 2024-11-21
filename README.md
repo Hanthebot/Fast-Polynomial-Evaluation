@@ -24,12 +24,18 @@
 ## File structure
 ```
 .
-├── galois              # modified version of Saied's GaloisCPP
-├── fft_finite.h        # header file
-├── fft_finite.cpp      # includes main()
-├── fft.cpp             # FFT implementation
-├── util.cpp            # initialization / IO functions
-├── sample_generator.py # generates sample input for program
+├── nd_vector              # Numpy's ndarray-like wrapper over memory
+├── galois                 # modified version of Saied's GaloisCPP
+├── fft_finite.h           # header file
+├── fft_finite.cpp         # includes main()
+├── fft.cpp                # FFT implementation
+├── util.cpp               # initialization / IO functions
+├── sample_generator.py    # generates sample input for 1D FFT
+├── fft_multivar.h         # header file
+├── fft_multivar.cpp       # includes main()
+├── nd_fft.cpp             # FFT implementation
+├── util_multivar.cpp      # initialization / IO functions
+├── sample_generator_nd.py # generates sample input for ND FFT
 └── ...
 ```
 
@@ -38,13 +44,26 @@
    - coefficient: received in following format
      - $a_{i_1,i_2,\dots,i_k}$: coefficient of $\prod_{j=1} X_j^k$
      - each $i_j<d$
-   - store $a$ in $n$-dimension array (size: $d^n$)
+   - store $a$ in $n$-dimension array (size: $d^m$)
      - where $A[i_1][i_2]\dots[i_k] = a_{i_1,i_2,\dots,i_k}$
+   - after operation: store $A[i_1][i_2]\dots[i_k]=f(X_1=w^{i_1},X_2=w^{i_2},\dots,X_k=w^{i_k})$
+2. ### Implementing $n$-d FFT
+   - implementation idea: run FFT over $n$-d array, considering each $(n-1)$-d array as a single element
+   - consider implementation of: temp storage, operation overload (addition, assignment, etc.)
+     - define a dedicated addition, subtraction, swap operation
+       - without requiring too much extra storage & work, etc.
+       - multiplication by $F$ (same type as nd vector element), member wise addition, etc. to be implemented
+     - for temporary storage: assign two $(n-1)$ degree array at wrapper, pass it by reference
 
 ### Remarks
 - [01/11/2024] Performs 1 million multiplication $\approx$ 0.7 seconds
   - Lenovo Yoga 6, AMD Ryzen 7 5700U
+- [21/11/2024] Performs 1 million multiplication $\approx$ 0.52 seconds
+  - Lenovo Yoga 6, AMD Ryzen 7 5700U
+  - changed C++ version to `C++20`, for the use of `std::span`
 
-### Reference material
-1. (Video by Reducible)[https://www.youtube.com/watch?v=h7apO7q16V0]
+### Reference material (univariate)
+1. [Video by Reducible](https://www.youtube.com/watch?v=h7apO7q16V0)
 2. [Stack Overflow](https://mathoverflow.net/questions/115560/primitive-kth-root-of-unity-in-a-finite-field-mathbbf-p)
+
+### Reference material (multivariate)

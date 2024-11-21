@@ -15,13 +15,17 @@
 # GNU Makefile to build the "test_gfelement" executable
 
 CC     = g++
-CFLAGS = -std=c++11 -Wall -O3 -o
-LFLAGS = -std=c++11 -Wall -O3 -c
+CFLAGS = -std=c++20 -Wall -O3 -o
+LFLAGS = -std=c++20 -Wall -O3 -c
 GMP = -lgmp -lgmpxx
 OBJS   = gfelement.o galoisfield.o modular_arith.o fft.o util.o
+OBJS_MULT   = gfelement.o galoisfield.o modular_arith.o nd_fft.o util_multivar.o nd_vector.o
 
 fft_finite: fft_finite.cpp fft_finite.h $(OBJS)
 	$(CC) $(CFLAGS) fft_finite fft_finite.cpp $(OBJS) $(GMP)
+
+fft_multivar: fft_multivar.cpp fft_multivar.h $(OBJS_MULT)
+	$(CC) $(CFLAGS) fft_multivar fft_multivar.cpp $(OBJS_MULT) $(GMP)
 
 gfelement.o: galois/gfelement.h galois/gfelement.cpp galois/modular_arith.h galois/typedefs.h 
 	$(CC) $(LFLAGS) galois/gfelement.cpp $(GMP)
@@ -35,8 +39,17 @@ modular_arith.o: galois/modular_arith.h galois/modular_arith.cpp galois/typedefs
 fft.o: fft.cpp fft_finite.h
 	$(CC) $(LFLAGS) fft.cpp $(GMP)
 
+nd_fft.o: nd_fft.cpp fft_multivar.h
+	$(CC) $(LFLAGS) nd_fft.cpp $(GMP)
+
 util.o: util.cpp fft_finite.h
 	$(CC) $(LFLAGS) util.cpp $(GMP)
+
+util_multivar.o: util_multivar.cpp fft_multivar.h
+	$(CC) $(LFLAGS) util_multivar.cpp $(GMP)
+
+nd_vector.o: nd_vector/nd_vector.cpp nd_vector/nd_vector.h
+	$(CC) $(LFLAGS) nd_vector/nd_vector.cpp $(GMP)
 
 clean:
 	del *.o
