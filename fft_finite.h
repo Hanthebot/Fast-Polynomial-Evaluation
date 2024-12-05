@@ -15,7 +15,7 @@ typedef GaloisField Field;
 u32 find_ind(u32 w_exp, u32 modulus);
 void fft(const vector<F>& w, vector<F> &arr, const map<F, u32>& dlog, const vector<u32>& rev, u32 logn, Field& field, Fint& mul_counter);
 
-bool getRootOfUnity(const Fint& modulus, Fint& prim_root);
+bool getRootOfUnity(const Fint& modulus, const u32& len, Fint& prim_root);
 
 Field init_setup(const F& zero_F, u32& logn, u32& len);
 

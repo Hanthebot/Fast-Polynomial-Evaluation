@@ -24,7 +24,7 @@ void fft_nd(const vector<F>& w, const nd_vector<F> &arr, const map<F, u32>& dlog
 
 void print_dlog(const nd_vector<F>& coeff, map<F, u32>& dlog, const F& zero_F, const string& prefix);
 
-bool getRootOfUnity(const Fint& modulus, Fint& prim_root);
+bool getRootOfUnity(const Fint& modulus, const u32& len, Fint& prim_root);
 
 // changed
 Field init_setup(const F& zero_F, u32& logn, u32& len, size_t& m);

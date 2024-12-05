@@ -19,10 +19,10 @@ def parse_coeff_1d(_i: str)->tuple:
     return None
 
 if __name__ == "__main__":
+    i = input("Enter file name: sample/input{???}.txt: ")
+    p, coeff = parse_coeff_1d(i)
     while True:
         try:
-            i = input("Enter file name: sample/input{???}.txt: ")
-            p, coeff = parse_coeff_1d(i)
             x = int(input("Enter x: "))
             print(evaluate_1d(x, coeff, p))
         except EOFError:

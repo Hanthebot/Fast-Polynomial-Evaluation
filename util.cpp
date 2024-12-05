@@ -6,11 +6,11 @@ using namespace std;
 using namespace shk_galoiscpp;
 using namespace std::chrono;
 
-bool getRootOfUnity(const Fint& modulus, Fint& prim_root) {
+bool getRootOfUnity(const Fint& modulus, const u32& len, Fint& prim_root) {
     random_device dev;
     mt19937 rng(dev());
-    uniform_int_distribution<mt19937::result_type> dist(1, mpz_get_ui(modulus.get_mpz_t()));
-    Fint tester = (modulus - 1) / 2, temp;
+    uniform_int_distribution<mt19937::result_type> dist(1, len);
+    Fint tester = len >> 1, temp;
     u32 trial;
     for (trial = 0; trial < 1000; ++trial) {
         prim_root = dist(rng);
@@ -31,7 +31,7 @@ Field init_setup(const F& zero_F, u32& logn, u32& len) {
     Fint modulus = len + 1;
     Fint rou;
     // alternatively: simply use rou = 3;
-    assert(getRootOfUnity(modulus, rou) && "rou not found");
+    assert(getRootOfUnity(modulus, len, rou) && "rou not found");
     Field my_field(modulus, 1, rou);
     cout << my_field << endl;
 

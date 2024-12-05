@@ -6,11 +6,11 @@ using namespace std;
 using namespace shk_galoiscpp;
 using namespace std::chrono;
 
-bool getRootOfUnity(const Fint& modulus, Fint& prim_root) {
+bool getRootOfUnity(const Fint& modulus, const u32& len, Fint& prim_root) {
     random_device dev;
     mt19937 rng(dev());
-    uniform_int_distribution<mt19937::result_type> dist(1, mpz_get_ui(modulus.get_mpz_t()));
-    Fint tester = (modulus - 1) / 2, temp;
+    uniform_int_distribution<mt19937::result_type> dist(1, len);
+    Fint tester = len >> 1, temp;
     u32 trial;
     for (trial = 0; trial < 1000; ++trial) {
         prim_root = dist(rng);
@@ -33,7 +33,8 @@ Field init_setup(const F& zero_F, u32& logn, u32& len, size_t& m) {
     Fint modulus = len + 1;
     Fint rou;
     // alternatively: simply use rou = 3;
-    assert(getRootOfUnity(modulus, rou) && "rou not found");
+    assert(getRootOfUnity(modulus, len, rou) && "rou not found");
+    rou = 3;
     Field my_field(modulus, 1, rou);
     cout << my_field << endl;
 
@@ -60,14 +61,14 @@ void recur_input(const nd_vector<F>& coeff, const span<u32>& degs) {
     if (degs.size() == 0) return;
     if (degs.size() == 1) {
         Fint temp;
-        for (u32 i = 0; i < degs[0]; ++i) {
+        for (u32 i = 0; i <= degs[0]; ++i) {
             // in case degree < len, not using operator>> on nd_vector directly, but get()
             cin >> temp;
             coeff[i].get() = temp;
         }
         return;
     }
-    for (u32 i = 0; i < degs[0]; ++i) {
+    for (u32 i = 0; i <= degs[0]; ++i) {
         recur_input(coeff[i], degs.subspan(1));
     }
 }
@@ -138,3 +139,27 @@ void print_dlog(const nd_vector<F>& coeff, map<F, u32>& dlog, const F& zero_F, c
         return;
     }
 }
+
+// void compute_manual(nd_vector<F>& ans, const nd_vector<F>& coeff, const F& carry) {
+//     if (coeff.getDim() == 0) {
+//         return;
+//     } else if (coeff.getDim() == 1) {
+//         F temp = carry.getOne();
+//         for (size_t i = i; i <= ans.getShape()[0]; ++i) {
+//             ans.get(i) += carry * temp;
+//             temp += 1;
+//         }
+//         return;
+//     }
+//     if (coeff.getDim() == 1) {
+//         for (size_t i = 0; i < coeff.getShape()[0]; ++i) {
+//             ans[i].get() = coeff[i].get();
+//         }
+//         return;
+//     } else {
+//         for (size_t i = 0; i < coeff.getShape()[0]; ++i) {
+//             compute_manual(ans[i] *= coeff[i]);
+//         }
+//         return;
+//     }
+// }

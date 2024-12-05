@@ -90,7 +90,7 @@ void fft_nd(const vector<F>& w, const nd_vector<F> &arr, const map<F, u32>& dlog
         for (u32 j = 0; j < len; j += i) {
             j_rev = rev[j/i];
             for (u32 k = 0; k < (i >> 1); ++k) {
-                temp_u = arr[j + k];
+                temp_u.set_range(arr[j + k]);
                 temp_v.set_mul(arr[j + k + (i >> 1)], w[j_rev >> 1]);
                 arr[j + k].set_add(temp_u, temp_v);
                 arr[j + k + (i >> 1)].set_sub(temp_u, temp_v);
