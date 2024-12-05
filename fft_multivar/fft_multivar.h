@@ -1,8 +1,8 @@
 #ifndef FFT_MULTIVAR_H
 #define FFT_MULTIVAR_H
 
-#include "galois/gfelement.h"
-#include "nd_vector/nd_vector.h"
+#include "../galois/gfelement.h"
+#include "../nd_vector/nd_vector.h"
 #include <map>
 #include <span>
 #include <chrono>

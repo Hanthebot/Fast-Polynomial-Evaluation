@@ -1,4 +1,4 @@
-#include "galois/gfelement.h"
+#include "../galois/gfelement.h"
 #include <vector>
 #include <map>
 #include <chrono>
