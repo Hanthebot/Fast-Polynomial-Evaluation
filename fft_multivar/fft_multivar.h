@@ -4,6 +4,7 @@
 #include "../galois/gfelement.h"
 #include "../nd_vector/nd_vector.h"
 #include <map>
+#include <mutex>
 #include <span>
 #include <chrono>
 
@@ -17,10 +18,9 @@ typedef GFelement F;
 typedef GaloisField Field;
 
 // changed
-void fft(const vector<F>& w, const span<F> &arr, const map<F, u32>& dlog, const vector<u32>& rev, u32 logn, Fint& mul_counter, F& u, F& v);
-void fft_multivar_recur(const vector<F>& w, const nd_vector<F> &arr, const map<F, u32>& dlog, const vector<u32>& rev, u32 logn, Fint& mul_counter, nd_vector<F>& temp_u, nd_vector<F>& temp_v);
+void fft(const vector<F>& w, const span<F> &arr, const map<F, u32>& dlog, const vector<u32>& rev, u32 logn, Fint& mul_counter, F& u, F& v, mutex& mul_counter_mutex);
 void fft_multivar_wrapper(const vector<F>& w, nd_vector<F> &arr, const map<F, u32>& dlog, const vector<u32>& rev, u32 logn, Fint& mul_counter, const F& zero_F);
-void fft_nd(const vector<F>& w, const nd_vector<F> &arr, const map<F, u32>& dlog, const vector<u32>& rev, u32 logn, Fint& mul_counter, nd_vector<F>& temp_u, nd_vector<F>& temp_v);
+void fft_nd(const vector<F>& w, const nd_vector<F> &arr, const map<F, u32>& dlog, const vector<u32>& rev, u32 logn, Fint& mul_counter, nd_vector<F>& temp_u, nd_vector<F>& temp_v, mutex& mul_counter_mutex);
 
 void print_dlog(const nd_vector<F>& coeff, map<F, u32>& dlog, const F& zero_F, const string& prefix);
 
