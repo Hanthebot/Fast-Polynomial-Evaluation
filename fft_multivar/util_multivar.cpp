@@ -139,26 +139,76 @@ void print_dlog(const nd_vector<F>& coeff, map<F, u32>& dlog, const F& zero_F, c
     }
 }
 
-// void compute_manual(nd_vector<F>& ans, const nd_vector<F>& coeff, const F& carry) {
-//     if (coeff.getDim() == 0) {
-//         return;
-//     } else if (coeff.getDim() == 1) {
-//         F temp = carry.getOne();
-//         for (size_t i = i; i <= ans.getShape()[0]; ++i) {
-//             ans.get(i) += carry * temp;
-//             temp += 1;
-//         }
-//         return;
-//     }
-//     if (coeff.getDim() == 1) {
-//         for (size_t i = 0; i < coeff.getShape()[0]; ++i) {
-//             ans[i].get() = coeff[i].get();
-//         }
-//         return;
-//     } else {
-//         for (size_t i = 0; i < coeff.getShape()[0]; ++i) {
-//             compute_manual(ans[i] *= coeff[i]);
-//         }
-//         return;
-//     }
-// }
+F evaluate_nd(const span<F>& assign, const nd_vector<F>& coeff, F val, const F& zero_F, Fint& mul_counter) {
+    if (coeff.getDim() == 0) {
+        mul_counter += 1;
+        return coeff.get() * val;
+    }
+    F acc = zero_F.getZero();
+    F power = zero_F.getOne();
+    Fint count = 0;
+    Fint modulus = zero_F.getField()->getModulus();
+    for (u32 i = 0; i < coeff.getShape()[0]; ++i) {
+        acc = acc + evaluate_nd(assign.subspan(1), coeff[i], val * power, zero_F, mul_counter);
+        power = power * assign[0].getX();
+        mul_counter += 2;
+        count++;
+    }
+    return acc;
+}
+
+void compute_recur(span<F>& assign, const nd_vector<F>& coeff, const nd_vector<F>& arr, 
+    const size_t& dim, const F& zero_F, const F& one_F, Fint& mul_counter) {
+    if (dim == 0) {
+        arr.span()[0] = evaluate_nd(assign, coeff, one_F, zero_F, mul_counter);
+        return;
+    }
+    F count = arr.get().getOne();
+    for (u32 i = 0; i < coeff.getShape()[0]; ++i) {
+        assign[coeff.getDim() - dim] = count;
+        compute_recur(assign, coeff, arr[i], dim - 1, zero_F, one_F, mul_counter);
+        ++count;
+    }
+}
+
+void compute_manual(const nd_vector<F>& coeff, nd_vector<F>& arr, Fint& mul_counter) {
+    vector<F> assign_vec(arr.getDim(), coeff.get().getOne());
+    span<F> assign{assign_vec};
+    F zero_F = arr.get().getZero();
+    F one_F = arr.get().getOne();
+    compute_recur(assign, coeff, arr, arr.getDim(), zero_F, one_F, mul_counter);
+}
+
+void check_result(const nd_vector<F>& coeff, const nd_vector<F>& arr, map<F, u32>& dlog, const F& zero_F,
+    Fint& total, Fint& incorrect, const string& prefix) {
+    if (coeff.getDim() == 0) {
+        if (coeff.get() != arr.get()) {
+            cout << "Error: f(" << prefix << ") : " << coeff.get() << " != " << arr.get() << endl;
+            ++incorrect;
+        }
+        ++total;
+        return;
+    }
+    if (coeff.getDim() == 1) {
+        u32 counter = 0;
+        for (F i = zero_F.getOne(); counter < coeff.getShape()[0]; ++i) {
+            assert(dlog.find(i) != dlog.end() && "i not found");
+            if (coeff[dlog[i]].get() != arr[counter].get()) {
+                cout << "Error: f(" << prefix << i.getX().get_str() << ") : "
+                    << coeff[dlog[i]].get() << " != " << arr[counter].get() << endl;
+                ++incorrect;
+            }
+            ++total;
+            ++counter;
+        }
+        return;
+    } else {
+        u32 counter = 0;
+        for (F i = zero_F.getOne(); counter < coeff.getShape()[0]; ++i) {
+            assert(dlog.find(i) != dlog.end() && "i not found");
+            check_result(coeff[dlog[i]], arr[counter], dlog, zero_F, total, incorrect, prefix + i.getX().get_str() + ", ");
+            ++counter;
+        }
+        return;
+    }
+}

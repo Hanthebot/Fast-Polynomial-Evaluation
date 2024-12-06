@@ -42,10 +42,22 @@ int main() {
         cout << "===coeff===\n" << coeff << endl;
     }
 
+    // manual computation
+    vector<F> vec_verify_data (total_len, zero_F);
+    nd_vector<F> arr {m, shape, vec_verify_data};
+
     auto start = chrono::high_resolution_clock::now();
-    fft_multivar_wrapper(w, coeff, dlog, rev, logn, mul_counter, zero_F);
+    Fint mul_counter_v = 0;
+    compute_manual(coeff, arr, mul_counter_v);
     auto stop = chrono::high_resolution_clock::now();
     auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
+
+    print_stats(mul_counter_v, duration);
+
+    start = chrono::high_resolution_clock::now();
+    fft_multivar_wrapper(w, coeff, dlog, rev, logn, mul_counter, zero_F);
+    stop = chrono::high_resolution_clock::now();
+    duration = chrono::duration_cast<chrono::microseconds>(stop - start);
 
     print_stats(mul_counter, duration);
 
@@ -53,6 +65,11 @@ int main() {
         cout << "\n===computation===" << endl;
         print_dlog(coeff, dlog, zero_F, "f(");
     }
+
+    Fint total = 0, incorrect = 0;
+    cout << "\n===Verification===" << endl;
+    check_result(coeff, arr, dlog, zero_F, total, incorrect);
+    cout << "Total: " << total << ", Incorrect: " << incorrect << endl;
 
     return 0;
 }

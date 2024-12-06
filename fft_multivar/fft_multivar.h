@@ -21,8 +21,10 @@ void fft(const vector<F>& w, const span<F> &arr, const map<F, u32>& dlog, const 
 void fft_multivar_recur(const vector<F>& w, const nd_vector<F> &arr, const map<F, u32>& dlog, const vector<u32>& rev, u32 logn, Fint& mul_counter, nd_vector<F>& temp_u, nd_vector<F>& temp_v);
 void fft_multivar_wrapper(const vector<F>& w, nd_vector<F> &arr, const map<F, u32>& dlog, const vector<u32>& rev, u32 logn, Fint& mul_counter, const F& zero_F);
 void fft_nd(const vector<F>& w, const nd_vector<F> &arr, const map<F, u32>& dlog, const vector<u32>& rev, u32 logn, Fint& mul_counter, nd_vector<F>& temp_u, nd_vector<F>& temp_v);
+void compute_manual(const nd_vector<F>& coeff, nd_vector<F>& ans, Fint& mul_counter);
 
 void print_dlog(const nd_vector<F>& coeff, map<F, u32>& dlog, const F& zero_F, const string& prefix);
+void check_result(const nd_vector<F>& coeff, const nd_vector<F>& arr, map<F, u32>& dlog, const F& zero_F, Fint& total, Fint& incorrect, const string& prefix = "");
 
 bool getRootOfUnity(const Fint& modulus, const u32& len, Fint& prim_root);
 
