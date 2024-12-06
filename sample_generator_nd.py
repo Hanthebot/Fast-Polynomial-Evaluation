@@ -24,5 +24,5 @@ def recur_form(sh:list)->str:
 for i in range(COUNT):
     shape = [randint(MIN_DEGREE, MAX_DEGREE) for _ in range(M)]
     str_form = recur_form(shape)
-    with open(f"multivar_sample/inputX2_{i+1}.txt", "w", encoding="utf-8") as fil:
-        fil.write(f"0 1 0\n{M}\n{LOG_N}\n{' '.join([str(sh) for sh in shape])}\n\n{str_form}")
+    with open(f"multivar_sample/input{i+1}.txt", "w", encoding="utf-8") as fil:
+        fil.write(f"0 0\n{M}\n{LOG_N}\n{' '.join([str(sh) for sh in shape])}\n\n{str_form}")
