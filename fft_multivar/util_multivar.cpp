@@ -34,7 +34,6 @@ Field init_setup(const F& zero_F, u32& logn, u32& len, size_t& m) {
     Fint rou;
     // alternatively: simply use rou = 3;
     assert(getRootOfUnity(modulus, len, rou) && "rou not found");
-    rou = 3;
     Field my_field(modulus, 1, rou);
     cout << my_field << endl;
 
