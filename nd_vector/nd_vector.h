@@ -103,6 +103,15 @@ class nd_vector {
         * @return nd_vector<T> The resulting vector with the appended dimension.
         */
         nd_vector<T> dim_append(size_t v);
+
+        void reshape(const std::span<size_t>& new_shape) {
+            u32 new_size = 1;
+            for (const auto& v : new_shape)
+                new_size *= v;
+            assert((size() == new_size) && "shape does not match");
+            shape = new_shape;
+            dim = new_shape.size();
+        }
         
         /**
         * @brief Sets the values of the vector to the product of the values of the given vectors.
@@ -177,7 +186,7 @@ class nd_vector {
         template<typename T_>
         friend std::ostream& operator<<(std::ostream& os, const nd_vector<T_>& vec);
         template<typename T_>
-        friend std::ostream& print(std::ostream& os, const nd_vector<T_>& vec, std::string prefix);
+        friend std::ostream& print(std::ostream& os, const nd_vector<T_>& vec, const std::string& prefix);
         template<typename T_>
         friend std::istream& operator>>(std::istream& is, nd_vector<T_>& vec);
 };
@@ -241,7 +250,7 @@ inline size_t nd_vector<T>::getDim() const {
 }
 
 template<typename T>
-std::ostream& print(std::ostream& os, const nd_vector<T>& vec, std::string prefix = "") {
+std::ostream& print(std::ostream& os, const nd_vector<T>& vec, const std::string& prefix = "") {
     if (vec.dim == 0) {
         os << vec.get() << "\n";
         return os;
