@@ -4,6 +4,8 @@
 #include <iostream>
 #include <span>
 #include <cassert>
+#include <algorithm>
+#include <execution>
 
 // using namespace std;
 
@@ -48,7 +50,7 @@ class nd_vector {
         * 
         * @param vec The vector containing the values to set.
         */
-        void set_range(const nd_vector<T>& vec) const;
+        void set_range(const nd_vector<T>& vec, const std::vector<u32>& parallel_vec) const;
 
         /**
         * @brief Gets the value at the given index.
@@ -119,11 +121,16 @@ class nd_vector {
         * @param a The first vector.
         * @param b The second vector. 
         */
-        void set_mul(const nd_vector<T>& a, const nd_vector<T>& b) const {
+        void set_mul(const nd_vector<T>& a, const nd_vector<T>& b, const std::vector<u32>& parallel_vec) const {
             assert(a.size() == b.size() && "size does not match");
             assert(size() == a.size() && "size does not match");
-            for (size_t i = 0; i < a.size(); ++i)
-                data[i] = a.get(i) * b.get(i);
+            std::for_each(std::execution::par, 
+                parallel_vec.begin(), 
+                parallel_vec.begin() + size(), 
+                [&](const u32& i) {
+                    data[i] = a.get(i) * b.get(i);
+                }
+            );
         }
         
         /**
@@ -132,10 +139,15 @@ class nd_vector {
         * @param a The first vector.
         * @param b The scalar. 
         */
-        void set_mul(const nd_vector<T>& a, const T& b) const {
+        void set_mul(const nd_vector<T>& a, const T& b, const std::vector<u32>& parallel_vec) const {
             assert(size() == a.size() && "size does not match");
-            for (size_t i = 0; i < a.size(); ++i)
-                data[i] = a.get(i) * b;
+            std::for_each(std::execution::par, 
+                parallel_vec.begin(), 
+                parallel_vec.begin() + size(), 
+                [&](const u32& i) {
+                    data[i] = a.get(i) * b;
+                }
+            );
         }
 
         /**
@@ -144,11 +156,16 @@ class nd_vector {
         * @param a The first vector.
         * @param b The second vector. 
         */
-        void set_add(const nd_vector<T>& a, const nd_vector<T>& b) const {
+        void set_add(const nd_vector<T>& a, const nd_vector<T>& b, const std::vector<u32>& parallel_vec) const {
             assert(a.size() == b.size() && "size does not match");
             assert(size() == a.size() && "size does not match");
-            for (size_t i = 0; i < a.size(); ++i)
-                data[i] = a.get(i) + b.get(i);
+            std::for_each(std::execution::par, 
+                parallel_vec.begin(), 
+                parallel_vec.begin() + size(), 
+                [&](const u32& i) {
+                    data[i] = a.get(i) + b.get(i);
+                }
+            );
         }
 
         /**
@@ -157,11 +174,16 @@ class nd_vector {
         * @param a The first vector.
         * @param b The second vector. 
         */
-        void set_sub(const nd_vector<T>& a, const nd_vector<T>& b) const {
+        void set_sub(const nd_vector<T>& a, const nd_vector<T>& b, const std::vector<u32>& parallel_vec) const {
             assert(a.size() == b.size() && "size does not match");
             assert(size() == a.size() && "size does not match");
-            for (size_t i = 0; i < a.size(); ++i)
-                data[i] = a.get(i) - b.get(i);
+            std::for_each(std::execution::par, 
+                parallel_vec.begin(), 
+                parallel_vec.begin() + size(), 
+                [&](const u32& i) {
+                    data[i] = a.get(i) - b.get(i);
+                }
+            );
         }
         
         /**
@@ -172,7 +194,7 @@ class nd_vector {
         void swap(const nd_vector<T>& vec) const {
             assert(this->dim == vec.dim && "dimension does not match");
             assert(isEqual(this->shape, vec.shape) && "shape does not match");
-            std::swap_ranges(this->data.begin(), this->data.end(), vec.data.begin());
+            std::swap_ranges(std::execution::par, this->data.begin(), this->data.end(), vec.data.begin());
         }
 
         /**
@@ -292,18 +314,23 @@ std::istream& operator>>(std::istream& is, nd_vector<T>& vec) {
 }
 
 template<typename T>
-void nd_vector<T>::set_range(const nd_vector<T>& vec) const {
+void nd_vector<T>::set_range(const nd_vector<T>& vec, const std::vector<u32>& parallel_vec) const {
     // set range if latter dimension are the same, or vec[dim] being 1
     if (this->dim == vec.dim) {
         if (this == &vec) return;
         assert(isEqual(this->shape, vec.shape) && "shape does not match");
-        copy(vec.data.begin(), vec.data.end(), this->data.begin());
+        copy(std::execution::par, vec.data.begin(), vec.data.end(), this->data.begin());
         return;
     }
     assert(this->dim > vec.dim && "dimension does not match");
-    for (size_t i = 0; i < this->shape[0]; ++i) {
-        (*this)[i].set_range(vec);
-    }
+    
+    std::for_each(std::execution::par, 
+        parallel_vec.begin(), 
+        parallel_vec.begin() + this->shape[0], 
+        [&](const u32& i) {
+            (*this)[i].set_range(vec, parallel_vec);
+        }
+    );
 }
 
 #endif // ND_VECTOR_H

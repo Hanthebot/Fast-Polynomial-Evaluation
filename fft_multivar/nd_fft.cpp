@@ -71,7 +71,7 @@ void fft_multivar_wrapper(const vector<F>& w, nd_vector<F> &arr, const map<F, u3
             [&](const u32& i) {
                 nd_vector<F> temp_u_ = temp_u[i];
                 nd_vector<F> temp_v_ = temp_v[i];
-                fft_nd(w, arr[i], dlog, rev, logn, mul_counter, temp_u_, temp_v_, mul_counter_mutex);
+                fft_nd(w, arr[i], dlog, rev, logn, mul_counter, temp_u_, temp_v_, mul_counter_mutex, parallel_vec);
             }
         );
     }
@@ -116,17 +116,17 @@ void fft(const vector<F>& w, const span<F> &arr, const map<F, u32>& dlog, const 
     @param logn value where 2 ^ logn + 1 = modulo 
  */
 void fft_nd(const vector<F>& w, const nd_vector<F> &arr, const map<F, u32>& dlog, const vector<u32>& rev, u32 logn, Fint& mul_counter,
-    nd_vector<F>& temp_u, nd_vector<F>& temp_v, mutex& mul_counter_mutex) {
+    nd_vector<F>& temp_u, nd_vector<F>& temp_v, mutex& mul_counter_mutex, const vector<u32>& parallel_vec) {
     u32 len = 1ULL << logn;
     u32 j_rev;
     for (u32 i = len; i > 1; i >>= 1) {
         for (u32 j = 0; j < len; j += i) {
             j_rev = rev[j/i];
             for (u32 k = 0; k < (i >> 1); ++k) {
-                temp_u.set_range(arr[j + k]);
-                temp_v.set_mul(arr[j + k + (i >> 1)], w[j_rev >> 1]);
-                arr[j + k].set_add(temp_u, temp_v);
-                arr[j + k + (i >> 1)].set_sub(temp_u, temp_v);
+                temp_u.set_range(arr[j + k], parallel_vec);
+                temp_v.set_mul(arr[j + k + (i >> 1)], w[j_rev >> 1], parallel_vec);
+                arr[j + k].set_add(temp_u, temp_v, parallel_vec);
+                arr[j + k + (i >> 1)].set_sub(temp_u, temp_v, parallel_vec);
                 {
                     lock_guard<mutex> guard(mul_counter_mutex);
                     mpz_add_ui(mul_counter.get_mpz_t(), mul_counter.get_mpz_t(), arr[0].size());
