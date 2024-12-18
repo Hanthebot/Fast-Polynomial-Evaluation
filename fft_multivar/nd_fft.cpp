@@ -23,8 +23,10 @@ void fft_multivar_wrapper(const vector<F>& w, nd_vector<F> &arr, const map<F, u3
     }
     vector<F> temp_u_vec(arr[0].size(), zero_F);
     vector<F> temp_v_vec(arr[0].size(), zero_F);
-    nd_vector<F> temp_u {arr.getDim() - 1, arr.getShape().subspan(1), temp_u_vec};  
-    nd_vector<F> temp_v {arr.getDim() - 1, arr.getShape().subspan(1), temp_v_vec};
+    span<size_t> shape = arr.getShape().subspan(1);
+    span<size_t> units = arr.getUnit().subspan(1);
+    nd_vector<F> temp_u {arr.getDim() - 1, shape, units, temp_u_vec};  
+    nd_vector<F> temp_v {arr.getDim() - 1, shape, units, temp_v_vec};
     fft_multivar_recur(w, arr, dlog, rev, logn, mul_counter, temp_u, temp_v);
 }
 
@@ -40,8 +42,8 @@ void fft_multivar_recur(const vector<F>& w, const nd_vector<F> &arr, const map<F
         return;
     }
     // for temporary storage of (n-1)d array
-    nd_vector<F> temp_u_ {temp_u.getDim() - 1, temp_u.getShape().subspan(1), temp_u[0].span()};
-    nd_vector<F> temp_v_ {temp_u.getDim() - 1, temp_u.getShape().subspan(1), temp_u[1].span()};
+    nd_vector<F> temp_u_ = temp_u[0];
+    nd_vector<F> temp_v_ = temp_v[0];
     for (size_t i = 0; i < arr.getShape()[0]; ++i) {
         fft_multivar_recur(w, arr[i], dlog, rev, logn, mul_counter, temp_u_, temp_v_);
     }

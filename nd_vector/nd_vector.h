@@ -16,6 +16,7 @@ class nd_vector {
     private:
         size_t dim;
         std::span<size_t> shape;
+        std::span<size_t> unit;
         std::span<T> data;
     public:
         /**
@@ -25,7 +26,7 @@ class nd_vector {
         * @param shape The shape of the vector.
         * @param data The data of the vector.
         */
-        nd_vector(const size_t& dim, const std::span<size_t>& shape, const std::span<T>& data);
+        nd_vector(const size_t& dim, const std::span<size_t>& shape, const std::span<size_t>& unit, const std::span<T>& data);
 
         /**
         * @brief Accesses the sub-vector at the given index.
@@ -73,6 +74,7 @@ class nd_vector {
         * @return const std::span<size_t> A span of the shape.
         */
         const std::span<size_t> getShape() const;
+        const std::span<size_t> getUnit() const;
 
         /**
         * @brief Returns the size of the vector.
@@ -192,35 +194,31 @@ class nd_vector {
 };
 
 template<typename T>
-nd_vector<T>::nd_vector(const size_t& dim, const std::span<size_t>& shape, const std::span<T>& data) : dim{dim}, shape{shape}, data{data} {
+nd_vector<T>::nd_vector(const size_t& dim, const std::span<size_t>& shape, const std::span<size_t>& unit, const std::span<T>& data) : dim{dim}, shape{shape}, unit{unit}, data{data} {
     assert(shape.size() == dim && "dimension and shape does not match");
-    u32 length = 1;
-    for (const auto& v : shape)
-        length *= v;
-    assert(length == data.size() && "size does not match");
 }
 
 template<typename T>
 nd_vector<T> nd_vector<T>::operator[](size_t i) const {
     assert(dim >= 1 && "no inner dimension");
     assert(i < shape[0] && "index out of bounds");
-    size_t unit = data.size() / shape[0];
-    auto beg_iter = data.begin() + i * unit;
+    auto beg_iter = data.begin() + i * unit[0];
     return {dim - 1, 
         shape.subspan(1), 
-        {beg_iter, beg_iter + unit}
+        unit.subspan(1), 
+        {beg_iter, beg_iter + unit[0]}
     };
 }
 
 template<typename T>
 inline const T& nd_vector<T>::get(size_t i) const {
-    assert(i < data.size() && "index out of bounds");
+    assert((i == 0 || i < data.size()) && "index out of bounds");
     return data[i];
 }
 
 template<typename T>
 inline T& nd_vector<T>::get(size_t i) {
-    assert(i < data.size() && "index out of bounds");
+    assert((i == 0 || i < data.size()) && "index out of bounds");
     return data[i];
 }
 
@@ -237,6 +235,11 @@ inline std::span<T> nd_vector<T>::span() {
 template<typename T>
 inline const std::span<size_t> nd_vector<T>::getShape() const {
     return shape;
+}
+
+template<typename T>
+inline const std::span<size_t> nd_vector<T>::getUnit() const {
+    return unit;
 }
 
 template<typename T>

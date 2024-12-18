@@ -29,15 +29,22 @@ int main() {
     // receiving coefficients
     vector<size_t> shape_vec(m, len);
     span<size_t> shape{shape_vec};
+    vector<size_t> units_vec(m, 1);
+    units_vec[m - 1] = 1;
+    for (int i = m - 2; i >= 0; --i) {
+        size_t temp = units_vec[i + 1] * shape_vec[i + 1];
+        units_vec[i] = temp;
+    }
+    span<size_t> units{units_vec};
     size_t total_len = static_cast<size_t>(pow(len, m));
     vector<F> vec_data (total_len, zero_F);
-    nd_vector<F> coeff {m, shape, vec_data};
+    nd_vector<F> coeff {m, shape, units, vec_data};
 
     coeff_init(coeff, m, degs_vec, rev, prime);
     
     // initializing rou and dlog map
     rou_init(w, dlog, zero_F, prime);
-
+    
     if (print_coeff) {
         cout << "===coeff===\n" << coeff << endl;
     }

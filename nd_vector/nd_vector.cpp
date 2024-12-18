@@ -19,12 +19,18 @@ template<typename T>
 nd_vector<T> nd_vector<T>::dim_prepend(size_t v) {
     std::vector<size_t>* const shape_arr = new std::vector<size_t>{shape.size() + v}; // potential memory leak 
     std::span<size_t> new_shape{*shape_arr};
-    for (size_t i = 0; i < v; ++i)
-        new_shape[i] = 1;
+    std::vector<size_t>* const unit_arr = new std::vector<size_t>{unit.size() + v}; // potential memory leak 
+    std::span<size_t> new_unit{*unit_arr};
     std::ranges::copy(shape.begin(), shape.end(), new_shape.begin() + v);
+    std::ranges::copy(unit.begin(), unit.end(), new_unit.begin() + v);
+    new_unit[v - 1] = unit[0] * shape[0];
+    for (size_t i = 0; i < v; ++i) {
+        new_shape[i] = 1;
+        new_unit[i] = new_unit[v - 1];
+    }
     // for (size_t i = 0; i < shape.size(); ++i)
     //     new_shape[i + v] = shape[i];
-    return {dim + v, new_shape, data};
+    return {dim + v, new_shape, new_unit, data};
 }
 
 template<typename T>
@@ -32,10 +38,15 @@ nd_vector<T> nd_vector<T>::dim_append(size_t v) {
     std::vector<size_t>*  shape_arr = new std::vector<size_t>{shape.size() + v}; // potential memory leak 
     std::span<size_t> new_shape{*shape_arr};
     std::ranges::copy(shape.begin(), shape.end(), new_shape.begin());
+    std::vector<size_t>*  unit_arr = new std::vector<size_t>{unit.size() + v}; // potential memory leak 
+    std::span<size_t> new_unit{*unit_arr};
+    std::ranges::copy(unit.begin(), unit.end(), new_unit.begin());
     size_t shape_size = shape.size();
-    for (size_t i = 0; i < v; ++i)
+    for (size_t i = 0; i < v; ++i) {
         new_shape[shape_size + i] = 1;
-    return {dim + v, new_shape, data};
+        new_unit[shape_size + i] = 1;
+    }
+    return {dim + v, new_shape, new_unit, data};
 }
 
 template class nd_vector<int>;
