@@ -38,12 +38,11 @@ def parse_coeff_nd(_i: str)->tuple:
     with open(f"multivar_sample/input{_i}.txt", "r", encoding="utf-8") as fil:
         _lines = fil.readlines()
         _m = int(_lines[1])
-        _logn = int(_lines[2])
-        _p = (1 << _logn) + 1
+        _prime = int(_lines[2])
         _shape = [int(i) for i in _lines[3].split(" ") if i not in ['\n', '', ' ']]
         _coeff = []
         parse_coeff_recur(_coeff, _lines[5:], _shape, [0])
-        return (_p, _m, _coeff)
+        return (_prime, _m, _coeff)
     return None
 
 if __name__ == "__main__":

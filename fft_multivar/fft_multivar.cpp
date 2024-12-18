@@ -11,7 +11,7 @@ int main() {
     vector<F> w;
     F zero_F(nullptr, 0);
     Fint mul_counter = 0;
-    u32 logn, len;
+    u32 logn, len, prime;
     size_t m;
     
     bool print_coeff, print_rst;
@@ -20,7 +20,7 @@ int main() {
     cout << "Print result? (0/1): ";
     cin >> print_rst;
     // initializing field and consts
-    Field my_field = init_setup(zero_F, logn, len, m);
+    Field my_field = init_setup(logn, len, m, prime);
     zero_F.setField(&my_field);
     
     // creating a vector of reversing bits
@@ -33,10 +33,10 @@ int main() {
     vector<F> vec_data (total_len, zero_F);
     nd_vector<F> coeff {m, shape, vec_data};
 
-    coeff_init(coeff, m, degs_vec, zero_F, rev, logn);
+    coeff_init(coeff, m, degs_vec, rev, prime);
     
     // initializing rou and dlog map
-    rou_init(w, dlog, zero_F, logn);
+    rou_init(w, dlog, zero_F, prime);
 
     if (print_coeff) {
         cout << "===coeff===\n" << coeff << endl;
@@ -51,7 +51,7 @@ int main() {
 
     if (print_rst) {
         cout << "\n===computation===" << endl;
-        print_dlog(coeff, dlog, zero_F, "f(");
+        print_dlog(coeff, dlog, zero_F, prime, "f(");
     }
 
     return 0;
