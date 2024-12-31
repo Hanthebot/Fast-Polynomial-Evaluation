@@ -158,7 +158,7 @@ bool operator<=(const GFelement& left, const GFelement& right)
 {
    if (left.field != right.field) throw ErrorIncompatibleFields;
 
-   return ((left==right) | (left<right)) ? true : false;
+   return (left==right) || (left<right);
 }
 
 
@@ -168,7 +168,7 @@ bool operator>=(const GFelement& left, const GFelement& right)
 {
    if (left.field != right.field) throw ErrorIncompatibleFields;
 
-   return ((left==right) | (left>right)) ? true : false;
+   return (left==right) || (left>right);
 }
 
 
@@ -190,7 +190,7 @@ bool operator>(const GFelement& left, const Fint& right)
 //------------------------------------------------------
 bool operator<=(const GFelement& left, const Fint& right)
 {
-   return ((left.getX()==right) | (left<right)) ? true : false;
+   return (left.getX()==right) || (left<right);
 }
 
 
@@ -198,7 +198,7 @@ bool operator<=(const GFelement& left, const Fint& right)
 //------------------------------------------------------
 bool operator>=(const GFelement& left, const Fint& right)
 {
-   return ((left.getX()==right) | (left>right)) ? true : false;
+   return (left.getX()==right) || (left>right);
 }
 
 
@@ -220,7 +220,7 @@ bool operator>(const GFelement& left, const unsigned int& right)
 //------------------------------------------------------
 bool operator<=(const GFelement& left, const unsigned int& right)
 {
-   return ((left.getX()==right) | (left<right)) ? true : false;
+   return (left.getX()==right) || (left<right);
 }
 
 
@@ -228,7 +228,7 @@ bool operator<=(const GFelement& left, const unsigned int& right)
 //------------------------------------------------------
 bool operator>=(const GFelement& left, const unsigned int& right)
 {
-   return ((left.getX()==right) | (left>right)) ? true : false;
+   return (left.getX()==right) || (left>right);
 }
 
 
@@ -240,7 +240,7 @@ GFelement operator+(const GFelement& left, const GFelement& right)
 
    GFelement result(left.field);
    result.value = left.value + right.value;
-   mpz_mod(result.value.get_mpz_t(), result.value.get_mpz_t(), left.field->getModulus().get_mpz_t());
+   result.value %= result.field->getModulus();
 
    return result;
 }
@@ -254,7 +254,7 @@ GFelement operator-(const GFelement& left, const GFelement& right)
 
    GFelement result(left.field);
    result.value = left.value - right.value;
-   mpz_mod(result.value.get_mpz_t(), result.value.get_mpz_t(), left.field->getModulus().get_mpz_t());
+   result.value %= result.field->getModulus();
 
    return result;
 }
@@ -268,7 +268,7 @@ GFelement operator*(const GFelement& left, const GFelement& right)
 
    GFelement result(left.field);
    result.value = left.value * right.value;
-   result.value %= left.field->getModulus();
+   result.value %= result.field->getModulus();
 
    return result;
 }
@@ -290,7 +290,7 @@ GFelement operator*(Fint left, const GFelement& right)
 {
    GFelement result(right.field);
    result.value = left * right.value;
-   result.value %= right.field->getModulus();
+   result.value %= result.field->getModulus();
 
    return result;
 }
@@ -303,7 +303,7 @@ GFelement operator*(const GFelement& left, Fint right)
 
    GFelement result(left.field);
    result.value = left.value * right;
-   result.value %= left.field->getModulus();
+   result.value %= result.field->getModulus();
 
    return result;
 }

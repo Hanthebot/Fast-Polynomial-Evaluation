@@ -358,24 +358,19 @@ inline void GFelement::setField(GaloisField* gf) {
 
 inline GFelement GFelement::getRootOfUnity() const
 {
-   GFelement temp{field, field->getRootOfUnity()};
-   return temp;
+   return {field, field->getRootOfUnity()};
 }
 
 
 inline GFelement GFelement::getZero() const
 {
-   Fint num = 0;
-   GFelement temp{field, num};
-   return temp;
+   return {field, 0};
 }
 
 
 inline GFelement GFelement::getOne() const
 {
-   Fint num = 1;
-   GFelement temp{field, num};
-   return temp;
+   return {field, 1};
 }
 
 inline GFelement& GFelement::operator++()
