@@ -83,23 +83,26 @@ void rou_init(vector<F>& w, map<F, u32>& dlog, const F& zero_F, u32 prime) {
     // mul_counter += len-2;
 }
 
-void recur_input(const nd_vector<F>& coeff, const span<u32>& degs) {
+void recur_input(const nd_vector<F>& coeff, const span<u32>& degs, Field* const field) {
     if (degs.size() == 0) return;
     if (degs.size() == 1) {
         Fint temp;
         for (u32 i = 0; i <= degs[0]; ++i) {
             // in case degree < len, not using operator>> on nd_vector directly, but get()
             cin >> temp;
-            coeff[i].get() = temp;
+            coeff[i].get() = {field, temp};
+        }
+        for (u32 i = degs[0] + 1; i < coeff.getShape()[0]; ++i) {
+            coeff[i].get() = {field, 0};
         }
         return;
     }
     for (u32 i = 0; i <= degs[0]; ++i) {
-        recur_input(coeff[i], degs.subspan(1));
+        recur_input(coeff[i], degs.subspan(1), field);
     }
 }
 
-void coeff_init(const nd_vector<F>& coeff, const size_t& m, vector<u32>& degs_vec, const vector<u32>& rev, u32 prime) {
+void coeff_init(const nd_vector<F>& coeff, const size_t& m, vector<u32>& degs_vec, const vector<u32>& rev, u32 prime, Field* const field) {
     degs_vec.resize(m, 0);
     cout << "Enter degree of " << m << "-variate polynomial: " << endl;
     for (size_t i = 0; i < m; ++i) {
@@ -112,7 +115,7 @@ void coeff_init(const nd_vector<F>& coeff, const size_t& m, vector<u32>& degs_ve
         cout << ", " << degs_vec[i];
     cout << "> degree polynomial, from degree 0: " << endl;
     span<u32> degs{degs_vec};
-    recur_input(coeff, degs);
+    recur_input(coeff, degs, field);
 }
 
 void rev_init(vector<u32>& rev, u32 logn) {

@@ -37,10 +37,13 @@ int main() {
     }
     span<size_t> units{units_vec};
     size_t total_len = static_cast<size_t>(pow(len, m));
-    vector<F> vec_data (total_len, zero_F);
-    nd_vector<F> coeff {m, shape, units, vec_data};
+    F* vec_data = new F[total_len];
+    for (size_t i = 0; i < total_len; ++i) {
+        vec_data[i] = {&my_field, 0};
+    }
+    nd_vector<F> coeff {m, shape, units, vec_data, total_len};
 
-    coeff_init(coeff, m, degs_vec, rev, prime);
+    coeff_init(coeff, m, degs_vec, rev, prime, &my_field);
     
     // initializing rou and dlog map
     rou_init(w, dlog, zero_F, prime);

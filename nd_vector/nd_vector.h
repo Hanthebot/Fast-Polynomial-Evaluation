@@ -17,7 +17,8 @@ class nd_vector {
         size_t dim;
         std::span<size_t> shape;
         std::span<size_t> unit;
-        std::span<T> data;
+        T* data;
+        size_t size_;
     public:
         /**
         * @brief Constructs an nd_vector object.
@@ -26,7 +27,7 @@ class nd_vector {
         * @param shape The shape of the vector.
         * @param data The data of the vector.
         */
-        nd_vector(const size_t& dim, const std::span<size_t>& shape, const std::span<size_t>& unit, const std::span<T>& data);
+        nd_vector(const size_t& dim, const std::span<size_t>& shape, const std::span<size_t>& unit, T* const data, const size_t& size_);
 
         /**
         * @brief Accesses the sub-vector at the given index.
@@ -65,8 +66,8 @@ class nd_vector {
         * 
         * @return const std::span<T> A span of the data.
         */
-        const std::span<T> span() const;
-        std::span<T> span();
+        T* const& ptr() const;
+        T*& ptr();
 
         /**
         * @brief Returns a span of the shape.
@@ -125,7 +126,7 @@ class nd_vector {
             assert(a.size() == b.size() && "size does not match");
             assert(size() == a.size() && "size does not match");
             for (size_t i = 0; i < a.size(); ++i)
-                data[i] = a.get(i) * b.get(i);
+                data[i] = a.data[i] * b.data[i];
         }
         
         /**
@@ -136,8 +137,8 @@ class nd_vector {
         */
         void set_mul(const nd_vector<T>& a, const T& b) const {
             assert(size() == a.size() && "size does not match");
-            for (size_t i = 0; i < a.size(); ++i)
-                data[i] = a.get(i) * b;
+            for (size_t i = 0; i < size_; ++i)
+                data[i] = a.data[i] * b;
         }
 
         /**
@@ -149,8 +150,8 @@ class nd_vector {
         void set_add(const nd_vector<T>& a, const nd_vector<T>& b) const {
             assert(a.size() == b.size() && "size does not match");
             assert(size() == a.size() && "size does not match");
-            for (size_t i = 0; i < a.size(); ++i)
-                data[i] = a.get(i) + b.get(i);
+            for (size_t i = 0; i < size_; ++i)
+                data[i] = a.data[i] + b.data[i];
         }
 
         /**
@@ -162,8 +163,8 @@ class nd_vector {
         void set_sub(const nd_vector<T>& a, const nd_vector<T>& b) const {
             assert(a.size() == b.size() && "size does not match");
             assert(size() == a.size() && "size does not match");
-            for (size_t i = 0; i < a.size(); ++i)
-                data[i] = a.get(i) - b.get(i);
+            for (size_t i = 0; i < size_; ++i)
+                data[i] = a.data[i] - b.data[i];
         }
         
         /**
@@ -174,7 +175,11 @@ class nd_vector {
         void swap(const nd_vector<T>& vec) const {
             assert(this->dim == vec.dim && "dimension does not match");
             assert(isEqual(this->shape, vec.shape) && "shape does not match");
-            std::swap_ranges(this->data.begin(), this->data.end(), vec.data.begin());
+            for (size_t i = 0; i < size_; ++i) {
+                T temp = data[i];
+                data[i] = vec.data[i];
+                vec.data[i] = temp;
+            }
         }
 
         /**
@@ -194,7 +199,7 @@ class nd_vector {
 };
 
 template<typename T>
-nd_vector<T>::nd_vector(const size_t& dim, const std::span<size_t>& shape, const std::span<size_t>& unit, const std::span<T>& data) : dim{dim}, shape{shape}, unit{unit}, data{data} {
+nd_vector<T>::nd_vector(const size_t& dim, const std::span<size_t>& shape, const std::span<size_t>& unit, T* const data, const size_t& size_) : dim{dim}, shape{shape}, unit{unit}, data{data}, size_{size_} {
     assert(shape.size() == dim && "dimension and shape does not match");
 }
 
@@ -202,33 +207,34 @@ template<typename T>
 nd_vector<T> nd_vector<T>::operator[](size_t i) const {
     assert(dim >= 1 && "no inner dimension");
     assert(i < shape[0] && "index out of bounds");
-    auto beg_iter = data.begin() + i * unit[0];
+    auto beg_ptr = data + i * unit[0];
     return {dim - 1, 
         shape.subspan(1), 
         unit.subspan(1), 
-        {beg_iter, beg_iter + unit[0]}
+        beg_ptr,
+        unit[0]
     };
 }
 
 template<typename T>
 inline const T& nd_vector<T>::get(size_t i) const {
-    assert((i == 0 || i < data.size()) && "index out of bounds");
+    assert((i == 0 || i < size_) && "index out of bounds");
     return data[i];
 }
 
 template<typename T>
 inline T& nd_vector<T>::get(size_t i) {
-    assert((i == 0 || i < data.size()) && "index out of bounds");
+    assert((i == 0 || i < size_) && "index out of bounds");
     return data[i];
 }
 
 template<typename T>
-inline const std::span<T> nd_vector<T>::span() const {
+inline T* const & nd_vector<T>::ptr() const {
     return data;
 }
 
 template<typename T>
-inline std::span<T> nd_vector<T>::span() {
+inline T*& nd_vector<T>::ptr() {
     return data;
 }
 
@@ -244,7 +250,7 @@ inline const std::span<size_t> nd_vector<T>::getUnit() const {
 
 template<typename T>
 inline size_t nd_vector<T>::size() const {
-    return data.size();
+    return size_;
 }
 
 template<typename T>
@@ -289,8 +295,8 @@ std::ostream& operator<<(std::ostream& os, const nd_vector<T>& vec) {
 
 template<typename T>
 std::istream& operator>>(std::istream& is, nd_vector<T>& vec) {
-    for (T& v : vec.data)
-        is >> v;
+    for (size_t i = 0; i < vec.size_; ++i)
+        is >> vec.data[i];
     return is;
 }
 
@@ -300,7 +306,9 @@ void nd_vector<T>::set_range(const nd_vector<T>& vec) const {
     if (this->dim == vec.dim) {
         if (this == &vec) return;
         assert(isEqual(this->shape, vec.shape) && "shape does not match");
-        copy(vec.data.begin(), vec.data.end(), this->data.begin());
+        for (size_t i = 0; i < size_; ++i) {
+            data[i] = vec.data[i];
+        }
         return;
     }
     assert(this->dim > vec.dim && "dimension does not match");

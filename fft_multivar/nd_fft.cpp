@@ -16,21 +16,21 @@ using namespace std;
     @param arr a polynomial in coefficient form, returned as map of RoU
     @param logn value where 2 ^ logn + 1 = modulo 
  */
-void fft_multivar_wrapper(const vector<F>& w, nd_vector<F> &arr, const map<F, u32>& dlog, const vector<u32>& rev, u32 logn, Fint& mul_counter, const F& zero_F) {
+void fft_multivar_wrapper(const vector<F>& w, nd_vector<F>& arr, const map<F, u32>& dlog, const vector<u32>& rev, u32 logn, Fint& mul_counter, const F& zero_F) {
     u32 len = 1ULL << logn;
     for (const auto& s : arr.getShape()) {
         assert(s == len && "size does not match");
     }
-    vector<F> temp_u_vec(arr[0].size(), zero_F);
-    vector<F> temp_v_vec(arr[0].size(), zero_F);
+    F* temp_u_vec = new F[arr[0].size()];
+    F* temp_v_vec = new F[arr[0].size()];
     span<size_t> shape = arr.getShape().subspan(1);
     span<size_t> units = arr.getUnit().subspan(1);
-    nd_vector<F> temp_u {arr.getDim() - 1, shape, units, temp_u_vec};  
-    nd_vector<F> temp_v {arr.getDim() - 1, shape, units, temp_v_vec};
+    nd_vector<F> temp_u {arr.getDim() - 1, shape, units, temp_u_vec, arr[0].size()};
+    nd_vector<F> temp_v {arr.getDim() - 1, shape, units, temp_v_vec, arr[0].size()};
     fft_multivar_recur(w, arr, dlog, rev, logn, mul_counter, temp_u, temp_v);
 }
 
-void fft_multivar_recur(const vector<F>& w, const nd_vector<F> &arr, const map<F, u32>& dlog, 
+void fft_multivar_recur(const vector<F>& w, const nd_vector<F>& arr, const map<F, u32>& dlog, 
     const vector<u32>& rev, u32 logn, Fint& mul_counter,
     nd_vector<F>& temp_u, nd_vector<F>& temp_v) {
     assert(isEqual(arr.getShape().subspan(1), temp_u.getShape()) && "shape does not match");
@@ -38,7 +38,7 @@ void fft_multivar_recur(const vector<F>& w, const nd_vector<F> &arr, const map<F
     if (arr.getDim() == 1) {
         F u = temp_u.get();
         F v = temp_v.get();
-        fft(w, arr.span(), dlog, rev, logn, mul_counter, u, v);
+        fft(w, arr.ptr(), dlog, rev, logn, mul_counter, u, v);
         return;
     }
     // for temporary storage of (n-1)d array
@@ -54,7 +54,7 @@ void fft_multivar_recur(const vector<F>& w, const nd_vector<F> &arr, const map<F
     @param arr a polynomial in coefficient form, returned as map of RoU
     @param logn value where 2 ^ logn + 1 = modulo 
  */
-void fft(const vector<F>& w, const span<F> &arr, const map<F, u32>& dlog, const vector<u32>& rev, u32 logn, Fint& mul_counter,
+void fft(const vector<F>& w, F* const& arr, const map<F, u32>& dlog, const vector<u32>& rev, u32 logn, Fint& mul_counter,
     F& u, F& v) {
     u32 len = 1ULL << logn;
     u32 j_rev;
@@ -84,7 +84,7 @@ void fft(const vector<F>& w, const span<F> &arr, const map<F, u32>& dlog, const 
     @param arr a polynomial in coefficient form, returned as map of RoU
     @param logn value where 2 ^ logn + 1 = modulo 
  */
-void fft_nd(const vector<F>& w, const nd_vector<F> &arr, const map<F, u32>& dlog, const vector<u32>& rev, u32 logn, Fint& mul_counter,
+void fft_nd(const vector<F>& w, const nd_vector<F>& arr, const map<F, u32>& dlog, const vector<u32>& rev, u32 logn, Fint& mul_counter,
     nd_vector<F>& temp_u, nd_vector<F>& temp_v) {
     u32 len = 1ULL << logn;
     u32 j_rev;
