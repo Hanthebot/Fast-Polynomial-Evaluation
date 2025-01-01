@@ -16,7 +16,7 @@ using namespace std;
     @param arr a polynomial in coefficient form, returned as map of RoU
     @param logn value where 2 ^ logn + 1 = modulo 
  */
-void fft_multivar_wrapper(const vector<F>& w, nd_vector<F>& arr, const map<F, u32>& dlog, const vector<u32>& rev, u32 logn, Fint& mul_counter, const F& zero_F) {
+void fft_multivar_wrapper(const F* w, nd_vector<F>& arr, const map<F, u32>& dlog, const u32* rev, u32 logn, Fint& mul_counter, const F& zero_F) {
     u32 len = 1ULL << logn;
     for (const auto& s : arr.getShape()) {
         assert(s == len && "size does not match");
@@ -30,8 +30,8 @@ void fft_multivar_wrapper(const vector<F>& w, nd_vector<F>& arr, const map<F, u3
     fft_multivar_recur(w, arr, dlog, rev, logn, mul_counter, temp_u, temp_v);
 }
 
-void fft_multivar_recur(const vector<F>& w, const nd_vector<F>& arr, const map<F, u32>& dlog, 
-    const vector<u32>& rev, u32 logn, Fint& mul_counter,
+void fft_multivar_recur(const F* w, const nd_vector<F>& arr, const map<F, u32>& dlog, 
+    const u32* rev, u32 logn, Fint& mul_counter,
     nd_vector<F>& temp_u, nd_vector<F>& temp_v) {
     assert(isEqual(arr.getShape().subspan(1), temp_u.getShape()) && "shape does not match");
     assert(isEqual(arr.getShape().subspan(1), temp_v.getShape()) && "shape does not match");
@@ -54,7 +54,7 @@ void fft_multivar_recur(const vector<F>& w, const nd_vector<F>& arr, const map<F
     @param arr a polynomial in coefficient form, returned as map of RoU
     @param logn value where 2 ^ logn + 1 = modulo 
  */
-void fft(const vector<F>& w, F* const& arr, const map<F, u32>& dlog, const vector<u32>& rev, u32 logn, Fint& mul_counter,
+void fft(const F* w, F* const& arr, const map<F, u32>& dlog, const u32* rev, u32 logn, Fint& mul_counter,
     F& u, F& v) {
     u32 len = 1ULL << logn;
     u32 j_rev;
@@ -84,7 +84,7 @@ void fft(const vector<F>& w, F* const& arr, const map<F, u32>& dlog, const vecto
     @param arr a polynomial in coefficient form, returned as map of RoU
     @param logn value where 2 ^ logn + 1 = modulo 
  */
-void fft_nd(const vector<F>& w, const nd_vector<F>& arr, const map<F, u32>& dlog, const vector<u32>& rev, u32 logn, Fint& mul_counter,
+void fft_nd(const F* w, const nd_vector<F>& arr, const map<F, u32>& dlog, const u32* rev, u32 logn, Fint& mul_counter,
     nd_vector<F>& temp_u, nd_vector<F>& temp_v) {
     u32 len = 1ULL << logn;
     u32 j_rev;

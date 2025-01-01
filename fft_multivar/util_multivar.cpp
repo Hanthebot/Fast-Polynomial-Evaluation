@@ -69,10 +69,10 @@ Field init_setup(u32& logn, u32& len, size_t& m, u32& prime) {
     return my_field;
 }
 
-void rou_init(vector<F>& w, map<F, u32>& dlog, const F& zero_F, u32 prime) {
-    w.resize(prime - 1, zero_F.getOne());
+void rou_init(F*& w, map<F, u32>& dlog, const F& zero_F, u32 prime) {
+    w = new F[prime - 1];
 
-    // w[0] = zero_F.getOne();
+    w[0] = zero_F.getOne();
     dlog[w[0]] = 0;
     w[1] = zero_F.getRootOfUnity();
     dlog[w[1]] = 1;
@@ -102,7 +102,7 @@ void recur_input(const nd_vector<F>& coeff, const span<u32>& degs, Field* const 
     }
 }
 
-void coeff_init(const nd_vector<F>& coeff, const size_t& m, vector<u32>& degs_vec, const vector<u32>& rev, u32 prime, Field* const field) {
+void coeff_init(const nd_vector<F>& coeff, const size_t& m, vector<u32>& degs_vec, u32 prime, Field* const field) {
     degs_vec.resize(m, 0);
     cout << "Enter degree of " << m << "-variate polynomial: " << endl;
     for (size_t i = 0; i < m; ++i) {
@@ -118,10 +118,9 @@ void coeff_init(const nd_vector<F>& coeff, const size_t& m, vector<u32>& degs_ve
     recur_input(coeff, degs, field);
 }
 
-void rev_init(vector<u32>& rev, u32 logn) {
+void rev_init(u32*& rev, u32 logn) {
     u32 len = 1ULL << logn;
-    rev.clear();
-    rev.resize(len, 0);
+    rev = new u32[len];
     rev[0] = 0;
     for (u32 i = 1; i < len; ++i)
         rev[i] = rev[i >> 1] >> 1 | (i & 1) << (logn - 1);

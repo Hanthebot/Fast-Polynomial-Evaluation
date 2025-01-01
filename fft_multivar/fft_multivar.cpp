@@ -7,8 +7,9 @@ using namespace shk_galoiscpp;
 
 int main() {
     map<F, u32> dlog;
-    vector<u32> rev, degs_vec;
-    vector<F> w;
+    vector<u32> degs_vec;
+    u32* rev = nullptr;
+    F* w = nullptr;
     F zero_F(nullptr, 0);
     Fint mul_counter = 0;
     u32 logn, len, prime;
@@ -43,7 +44,7 @@ int main() {
     }
     nd_vector<F> coeff {m, shape, units, vec_data, total_len};
 
-    coeff_init(coeff, m, degs_vec, rev, prime, &my_field);
+    coeff_init(coeff, m, degs_vec, prime, &my_field);
     
     // initializing rou and dlog map
     rou_init(w, dlog, zero_F, prime);
