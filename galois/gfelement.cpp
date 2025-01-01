@@ -240,7 +240,7 @@ GFelement operator+(const GFelement& left, const GFelement& right)
 
    GFelement result(left.field);
    result.value = left.value + right.value;
-   result.value %= result.field->getModulus();
+   mpz_mod(result.value.get_mpz_t(), result.value.get_mpz_t(), result.field->getModulus().get_mpz_t());
 
    return result;
 }
@@ -254,7 +254,7 @@ GFelement operator-(const GFelement& left, const GFelement& right)
 
    GFelement result(left.field);
    result.value = left.value - right.value;
-   result.value %= result.field->getModulus();
+   mpz_mod(result.value.get_mpz_t(), result.value.get_mpz_t(), result.field->getModulus().get_mpz_t());
 
    return result;
 }
@@ -268,7 +268,7 @@ GFelement operator*(const GFelement& left, const GFelement& right)
 
    GFelement result(left.field);
    result.value = left.value * right.value;
-   result.value %= result.field->getModulus();
+   mpz_mod(result.value.get_mpz_t(), result.value.get_mpz_t(), result.field->getModulus().get_mpz_t());
 
    return result;
 }
@@ -290,7 +290,7 @@ GFelement operator*(Fint left, const GFelement& right)
 {
    GFelement result(right.field);
    result.value = left * right.value;
-   result.value %= result.field->getModulus();
+   mpz_mod(result.value.get_mpz_t(), result.value.get_mpz_t(), result.field->getModulus().get_mpz_t());
 
    return result;
 }
@@ -303,7 +303,7 @@ GFelement operator*(const GFelement& left, Fint right)
 
    GFelement result(left.field);
    result.value = left.value * right;
-   result.value %= result.field->getModulus();
+   mpz_mod(result.value.get_mpz_t(), result.value.get_mpz_t(), result.field->getModulus().get_mpz_t());
 
    return result;
 }
