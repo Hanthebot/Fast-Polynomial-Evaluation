@@ -57,17 +57,19 @@ void fft_multivar_recur(const vector<F>& w, const nd_vector<F> &arr, const map<F
 void fft(const vector<F>& w, const span<F> &arr, const map<F, u32>& dlog, const vector<u32>& rev, u32 logn, Fint& mul_counter,
     F& u, F& v) {
     u32 len = 1ULL << logn;
-    u32 j_rev;
+    u32 j_rev, j_count = 0;
     for (u32 i = len; i > 1; i >>= 1) { // i: gap between next coefficient 
         for (u32 j = 0; j < len; j += i) { // j: margin between initial point and point of interest
-            j_rev = rev[j/i];
+            // j_rev = rev[j/i];
+            j_rev = rev[j_count];
             for (u32 k = 0; k < (i >> 1); ++k) { // k: initial starting point
                 u = arr[j + k]; // P_e(X^2)
                 v = arr[j + k + (i >> 1)] * w[j_rev >> 1]; // x*P_o(X^2)
                 arr[j + k] = u + v; // P(X) = P_e(X^2) + x*P_o(X^2)
                 arr[j + k + (i >> 1)] = u - v; // P(-X) = P_e(X^2) - x*P_0(X^2)
-                mul_counter++;
             }
+            mul_counter += (i >> 1);
+            ++j_count;
         }
     }
     for (u32 i = 0; i < len; ++i) {
@@ -87,17 +89,18 @@ void fft(const vector<F>& w, const span<F> &arr, const map<F, u32>& dlog, const 
 void fft_nd(const vector<F>& w, const nd_vector<F> &arr, const map<F, u32>& dlog, const vector<u32>& rev, u32 logn, Fint& mul_counter,
     nd_vector<F>& temp_u, nd_vector<F>& temp_v) {
     u32 len = 1ULL << logn;
-    u32 j_rev;
+    u32 j_rev, j_count = 0;
     for (u32 i = len; i > 1; i >>= 1) {
         for (u32 j = 0; j < len; j += i) {
-            j_rev = rev[j/i];
+            j_rev = rev[j_count];
             for (u32 k = 0; k < (i >> 1); ++k) {
                 temp_u.set_range(arr[j + k]);
                 temp_v.set_mul(arr[j + k + (i >> 1)], w[j_rev >> 1]);
                 arr[j + k].set_add(temp_u, temp_v);
                 arr[j + k + (i >> 1)].set_sub(temp_u, temp_v);
-                mpz_add_ui(mul_counter.get_mpz_t(), mul_counter.get_mpz_t(), arr[0].size());
             }
+            mpz_add_ui(mul_counter.get_mpz_t(), mul_counter.get_mpz_t(), arr[0].size() * (i >> 1));
+            ++j_count;
         }
     }
     for (u32 i = 0; i < len; ++i) {
