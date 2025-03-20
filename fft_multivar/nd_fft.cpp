@@ -59,6 +59,7 @@ void fft(const F* w, F* const& arr, const map<F, u32>& dlog, const u32* rev, u32
     u32 len = 1ULL << logn;
     u32 j_rev, j_count = 0;
     for (u32 i = len; i > 1; i >>= 1) { // i: gap between next coefficient 
+        j_count = 0;
         for (u32 j = 0; j < len; j += i) { // j: margin between initial point and point of interest
             // j_rev = rev[j/i];
             j_rev = rev[j_count];
@@ -91,6 +92,7 @@ void fft_nd(const F* w, const nd_vector<F>& arr, const map<F, u32>& dlog, const 
     u32 len = 1ULL << logn;
     u32 j_rev, j_count = 0;
     for (u32 i = len; i > 1; i >>= 1) {
+        j_count = 0;
         for (u32 j = 0; j < len; j += i) {
             j_rev = rev[j_count];
             for (u32 k = 0; k < (i >> 1); ++k) {
