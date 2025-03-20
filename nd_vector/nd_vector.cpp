@@ -11,7 +11,7 @@ bool isEqual(const std::span<size_t>& a, const std::span<size_t>& b) {
 
 template<typename T>
 void nd_vector<T>::set_val(const T& val, size_t i) const {
-    assert(i < data.size() && "index out of bounds");
+    assert(i < size_ && "index out of bounds");
     data[i] = val;
 }
 
@@ -30,7 +30,7 @@ nd_vector<T> nd_vector<T>::dim_prepend(size_t v) {
     }
     // for (size_t i = 0; i < shape.size(); ++i)
     //     new_shape[i + v] = shape[i];
-    return {dim + v, new_shape, new_unit, data};
+    return {dim + v, new_shape, new_unit, data, size_};
 }
 
 template<typename T>
@@ -46,7 +46,7 @@ nd_vector<T> nd_vector<T>::dim_append(size_t v) {
         new_shape[shape_size + i] = 1;
         new_unit[shape_size + i] = 1;
     }
-    return {dim + v, new_shape, new_unit, data};
+    return {dim + v, new_shape, new_unit, data, size_};
 }
 
 template class nd_vector<int>;
