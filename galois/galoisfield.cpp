@@ -22,7 +22,10 @@ namespace shk_galoiscpp
 {
 
 //------------------------------------------------------
-GaloisField::GaloisField(Fint mod, Int dim, Fint omega)
+GaloisField::GaloisField(Fint mod, Int dim, Fint omega): GaloisField(mod, dim, omega, nullptr, nullptr) {}
+
+//------------------------------------------------------
+GaloisField::GaloisField(Fint mod, Int dim, Fint omega, GFelement* dlog, GFelement* w): dlog{dlog}, w{w}
 {
    assert (mod>1);
    assert (dim>0);

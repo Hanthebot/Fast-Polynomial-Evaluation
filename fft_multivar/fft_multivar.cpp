@@ -6,10 +6,10 @@ using namespace std;
 using namespace shk_galoiscpp;
 
 int main() {
-    map<F, u32> dlog;
     vector<u32> degs_vec;
     u32* rev = nullptr;
     F* w = nullptr;
+    F* dlog = nullptr;
     F zero_F(nullptr, 0);
     Fint mul_counter = 0;
     u32 logn, len, prime;
@@ -48,6 +48,7 @@ int main() {
     
     // initializing rou and dlog map
     rou_init(w, dlog, zero_F, prime);
+    my_field.setDlogW(dlog, w);
     
     if (print_coeff) {
         cout << "===coeff===\n" << coeff << endl;

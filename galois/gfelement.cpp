@@ -21,6 +21,9 @@ using namespace std;
 namespace shk_galoiscpp
 {
 
+//-----------------------------------------------------------------------------
+// Pseudo-friend
+Fint multInverse(const Fint& m, const GaloisField* field);
 
 //-----------------------------------------------------------------------------
 // Constructors and destructors
@@ -241,6 +244,7 @@ GFelement operator+(const GFelement& left, const GFelement& right)
    GFelement result(left.field);
    result.value = left.value + right.value;
    mpz_mod(result.value.get_mpz_t(), result.value.get_mpz_t(), result.field->getModulus().get_mpz_t());
+   if (result.value >= left.field->getModulus()) result.value -= result.field->getModulus();
 
    return result;
 }
@@ -254,7 +258,7 @@ GFelement operator-(const GFelement& left, const GFelement& right)
 
    GFelement result(left.field);
    result.value = left.value - right.value;
-   mpz_mod(result.value.get_mpz_t(), result.value.get_mpz_t(), result.field->getModulus().get_mpz_t());
+   if (result.value < 0) result.value += result.field->getModulus();
 
    return result;
 }
@@ -268,7 +272,8 @@ GFelement operator*(const GFelement& left, const GFelement& right)
 
    GFelement result(left.field);
    result.value = left.value * right.value;
-   mpz_mod(result.value.get_mpz_t(), result.value.get_mpz_t(), result.field->getModulus().get_mpz_t());
+   if (result.value > result.field->getModulus())
+      mpz_mod(result.value.get_mpz_t(), result.value.get_mpz_t(), result.field->getModulus().get_mpz_t());
 
    return result;
 }
@@ -315,7 +320,7 @@ GFelement operator/(const GFelement& left, Fint right)
 {
    GFelement result(left.field);
 
-   return left * inverseModular(right, left.field->getModulus());
+   return left * multInverse(right, left.field);
 }
 
 
@@ -333,13 +338,30 @@ ostream& operator<<(ostream& output, const GFelement& right)
 //------------------------------------------------------
 GFelement GFmultInverse(const GFelement& gfe)
 {
+   if (gfe.value == 0) throw ErrorNoInverse;
    GFelement result(gfe.field);
-   result.value = inverseModular(gfe.value, gfe.field->getModulus());
+   result.value = multInverse(gfe.value, gfe.field);
 
    return result;
 }
 
+//------------------------------------------------------
+Fint multInverse(const Fint& m, const GaloisField* field)
+{
+   if (m == 0) throw ErrorNoInverse;
+   if (m == 1) {
+      return 1;
+   }
+   if (field->getDlog()) {
+      Fint temp = field->getModulus() - field->getDlog()[(ptrdiff_t) mpz_get_ui(m.get_mpz_t())].getX();
+      return field->getW()[(ptrdiff_t)
+         mpz_get_ui(
+            temp.get_mpz_t()
+         )].getX();
+   }
 
+   return inverseModular(m, field->getModulus());
+}
 
 //------------------------------------------------------
 GFelement GFexp(const GFelement& G, Fint m)
@@ -358,7 +380,8 @@ GFelement GFexp(const GFelement& G, Fint m)
       S = G;
    }
 
-   for (Int i=0; i < static_cast<signed>(8*sizeof(Fint)); i++)
+   Int full_size = static_cast<signed>(8*sizeof(Fint));
+   for (Int i=0; i < full_size; i++)
    {
       Gtemp = Gtemp * Gtemp;
       mask <<= 1;

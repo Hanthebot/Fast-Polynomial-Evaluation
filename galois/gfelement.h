@@ -156,6 +156,11 @@ class GFelement
       */
       GFelement& operator++();
 
+      /**
+         Converts into size
+      */
+     ptrdiff_t toSize() const;
+
 
       /**
          Compares two GFelements, checks for equality
@@ -379,6 +384,11 @@ inline GFelement& GFelement::operator++()
    if (value >= field->getModulus())
       value %= field->getModulus();
    return *this;
+}
+
+inline ptrdiff_t GFelement::toSize() const
+{
+   return mpz_get_ui(value.get_mpz_t());
 }
 
 } // namespace shk_galoiscpp

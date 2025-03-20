@@ -69,16 +69,18 @@ Field init_setup(u32& logn, u32& len, size_t& m, u32& prime) {
     return my_field;
 }
 
-void rou_init(F*& w, map<F, u32>& dlog, const F& zero_F, u32 prime) {
+void rou_init(F*& w, F*& dlog, const F& zero_F, u32 prime) {
     w = new F[prime - 1];
-
+    dlog = new F[prime];
     w[0] = zero_F.getOne();
-    dlog[w[0]] = 0;
+    dlog[w[0].toSize()] = zero_F;
     w[1] = zero_F.getRootOfUnity();
-    dlog[w[1]] = 1;
+    dlog[w[1].toSize()] = zero_F.getOne();
+    Fint count = 2;
     for (u32 i = 2; i < prime - 1; ++i) {
         w[i] = w[i - 1] * w[1];
-        dlog[w[i]] = i;
+        dlog[w[i].toSize()] = count;
+        count++;
     }
     // mul_counter += len-2;
 }
@@ -139,7 +141,7 @@ void print_stats(Fint& mul_counter, microseconds duration) {
     cout << "Speed: " << speed << " s/M mult" << endl;
 }
 
-void print_dlog(const nd_vector<F>& coeff, map<F, u32>& dlog, const F& zero_F, const u32& prime, const string& prefix) {
+void print_dlog(const nd_vector<F>& coeff, F* dlog, const F& zero_F, const u32& prime, const string& prefix) {
     if (coeff.getDim() == 0) {
         cout << prefix << coeff.get() << "\n";
         return;
@@ -147,8 +149,8 @@ void print_dlog(const nd_vector<F>& coeff, map<F, u32>& dlog, const F& zero_F, c
     if (coeff.getDim() == 1) {
         u32 counter = 1;
         for (F i = zero_F.getOne(); counter < prime; ++i) {
-            assert(dlog.find(i) != dlog.end() && "i not found");
-            cout << prefix << i << ") : " << coeff[dlog[i]].get() << endl;
+            // assert(dlog.find(i) != dlog.end() && "i not found");
+            cout << prefix << i << ") : " << coeff[dlog[counter].toSize()].get() << endl;
             ++counter;
         }
         cout << endl;
@@ -156,8 +158,7 @@ void print_dlog(const nd_vector<F>& coeff, map<F, u32>& dlog, const F& zero_F, c
     } else {
         u32 counter = 1;
         for (F i = zero_F.getOne(); counter < prime; ++i) {
-            assert(dlog.find(i) != dlog.end() && "i not found");
-            print_dlog(coeff[dlog[i]], dlog, zero_F, prime, prefix + i.getX().get_str() + ", ");
+            print_dlog(coeff[dlog[counter].toSize()], dlog, zero_F, prime, prefix + i.getX().get_str() + ", ");
             ++counter;
         }
         cout << endl;

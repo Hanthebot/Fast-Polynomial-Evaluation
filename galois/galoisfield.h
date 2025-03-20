@@ -32,6 +32,7 @@ class GaloisField
          @param rou
       */
       GaloisField(Fint mod, Int dim, Fint rou);
+      GaloisField(Fint mod, Int dim, Fint rou, GFelement* dlog, GFelement* w);
 
       /**
          Destructs GaloisField, freeing allocated space for reduction polynomial in it.
@@ -58,6 +59,21 @@ class GaloisField
       Fint getRootOfUnity() const;
 
       /**
+         Returns dlog (exponent cache)
+      */
+      GFelement* const getDlog() const;
+
+      /**
+         Returns w (exponent cache)
+      */
+      GFelement* const getW() const;
+
+      /**
+          
+      */
+     void setDlogW(GFelement* dlog, GFelement* w);
+
+      /**
          Outputs information about this Galois Field to the standard output.
          @param gf GaloisField on the right of << sign
          @param output an output stream on the left of << sign
@@ -69,6 +85,8 @@ class GaloisField
       Fint modulus;      // prime modulus (characteristic) of Galois Field
       Int dimension;     // dimension of Galois Field
       Fint rou;  // reduction polynomial of Galois Field
+      GFelement* dlog; // precomputed values for inverse multiplication
+      GFelement* w;    // precomputed values for inverse multiplication
 };
 
 
@@ -95,7 +113,22 @@ inline Fint GaloisField::getRootOfUnity() const
    return rou;
 }
 
+inline GFelement* const GaloisField::getDlog() const
+{
+   return dlog;
+}
 
+inline GFelement* const GaloisField::getW() const
+{
+   return w;
+}
+
+inline void GaloisField::setDlogW(GFelement* dlog, GFelement* w)
+{
+   assert(dlog != nullptr && w != nullptr);
+   this->dlog = dlog;
+   this->w = w;
+}
 
 } // namespace shk_galoiscpp
 
