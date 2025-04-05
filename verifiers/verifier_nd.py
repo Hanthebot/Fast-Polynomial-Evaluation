@@ -40,8 +40,9 @@ def parse_coeff_nd(_i: str)->tuple:
         _m = int(_lines[1])
         _prime = int(_lines[2])
         _shape = [int(i) for i in _lines[3].split(" ") if i not in ['\n', '', ' ']]
+        _samples  = int(_lines[4])
         _coeff = []
-        parse_coeff_recur(_coeff, _lines[5:], _shape, [0])
+        parse_coeff_recur(_coeff, _lines[6 + _samples:], _shape, [0])
         return (_prime, _m, _coeff)
     return None
 
