@@ -152,6 +152,31 @@ class GFelement
       GFelement operator-();
 
       /**
+        Adds Fint without enforcing modulus
+      */
+      void raw_add(const Fint& right);
+
+      /**
+        Adds GFelement without enforcing modulus
+      */
+      void raw_add(const GFelement& right);
+
+      /**
+        Multiplies Fint without enforcing modulus
+      */
+      void raw_mult(const Fint& right);
+
+      /**
+        Multiplies GFelement without enforcing modulus
+      */
+      void raw_mult(const GFelement& right);
+
+      /**
+        Explicitly enforce modulus on this GFelement
+      */
+      void enforce_modulus();
+
+      /**
          Increments
       */
       GFelement& operator++();
@@ -390,6 +415,35 @@ inline ptrdiff_t GFelement::toSize() const
 {
    return mpz_get_ui(value.get_mpz_t());
 }
+
+inline void GFelement::raw_add(const GFelement& right) {
+   value += right.value;
+}
+
+inline void GFelement::raw_add(const Fint& right) {
+   value += right;
+}
+
+inline void GFelement::raw_mult(const GFelement& right) {
+   value *= right.value;
+}
+
+inline void GFelement::raw_mult(const Fint& right) {
+   value *= right;
+}
+
+inline void GFelement::enforce_modulus() {
+   if (field) {
+      if (value >= field->getModulus())
+         value %= field->getModulus();
+      else if (value < 0) {
+         while (value < 0)
+            value += field->getModulus();
+      }
+   }
+}
+
+Fint multInverse(const Fint& m, const GaloisField* field);
 
 } // namespace shk_galoiscpp
 

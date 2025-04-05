@@ -353,7 +353,7 @@ Fint multInverse(const Fint& m, const GaloisField* field)
       return 1;
    }
    if (field->getDlog()) {
-      Fint temp = field->getModulus() - field->getDlog()[(ptrdiff_t) mpz_get_ui(m.get_mpz_t())].getX();
+      Fint temp = field->getModulus() - 1 - field->getDlog()[(ptrdiff_t) mpz_get_ui(m.get_mpz_t())].getX();
       return field->getW()[(ptrdiff_t)
          mpz_get_ui(
             temp.get_mpz_t()
