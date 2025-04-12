@@ -1,6 +1,7 @@
 #include <iostream>
 #include <cmath>
 #include "fft_multivar.h"
+#include "util.h"
 
 using namespace std;
 using namespace shk_galoiscpp;
