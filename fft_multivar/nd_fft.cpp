@@ -28,8 +28,9 @@ int evaluate_all_point(const nd_vector<Fint>& arr, const Fint& modulo, const Fin
     vector<size_t>* shape_vec_s = new vector<size_t>[fields_used.size()];
     vector<size_t>* unit_vec_s = new vector<size_t>[fields_used.size()];
     
-    F* temp_u_vec = new F[pow(max_fft_field - 1, m - 1)];
-    F* temp_v_vec = new F[pow(max_fft_field - 1, m - 1)];
+    F* temp_u_vec = new F[pow(max_fft_field - 1, m)]; // temporary storage for FFT
+    F* temp_v1_vec = new F[pow(max_fft_field - 1, m - 1)]; // temporary storage for value storage
+    F* temp_v2_vec = new F[pow(max_fft_field - 1, m - 1)]; // temporary storage for value storage
     
     for (size_t i = 0; i < fields_used.size(); ++i) {
         span<size_t> shape, units;
@@ -40,19 +41,25 @@ int evaluate_all_point(const nd_vector<Fint>& arr, const Fint& modulo, const Fin
         rou_init(w_s[i], dlog_s[i], zero_F_s[i], fields_used[i]);
         fields[i]->setDlogW(dlog_s[i], w_s[i]);
         point_evaluation[i] = new Fint[points_to_evaluate.size()];
+        // receiving coefficients
+        construct_nd_vector_helper(shape_vec_s[i], shape, unit_vec_s[i], units, m, fields_used[i]);
+        
+        init_coeff_field(coeff_data, arr.getDim(), buf_size, zero_F_s[i]);
+        
+        coeff_s[i] = new nd_vector<F>(m, shape, units, coeff_data, buf_size);
+        coeff_reduce(arr, coeff_s[i], fields_used[i]);
+        for (size_t j = 0; j < pow(fields_used[i] - 1, m); ++j) {
+            temp_u_vec[j].setField(fields[i]);
+        }
+        for (size_t j = 0; j < pow(fields_used[i] - 1, m - 1); ++j) {
+            temp_v1_vec[j].setField(fields[i]);
+            temp_v2_vec[j].setField(fields[i]);
+        }
         if (isFermat[i]) {
-            // receiving coefficients
-            construct_nd_vector_helper(shape_vec_s[i], shape, unit_vec_s[i], units, m, fields_used[i]);
-            
-            init_coeff_field(coeff_data, arr.getDim(), buf_size, zero_F_s[i]);
-    
-            coeff_s[i] = new nd_vector<F>(m, shape, units, coeff_data, buf_size);
-            coeff_reduce(arr, coeff_s[i], fields_used[i]);
-
             u32 local_logn = log2(fields_used[i] - 1);
             rev_init(rev_s[i], local_logn);
-            fft_multivar_wrapper(w_s[i], *coeff_s[i], dlog_s[i], rev_s[i], local_logn, 
-                mul_counter, zero_F_s[i], temp_u_vec, temp_v_vec);
+            fft_multivar_wrapper(w_s[i], *coeff_s[i], rev_s[i], local_logn, 
+                mul_counter, temp_v1_vec, temp_v2_vec);
             for (size_t j = 0; j < points_to_evaluate.size(); ++j) {
                 nd_vector<F> elem = *coeff_s[i];
                 for (const Fint& coord : points_to_evaluate[j]) {
@@ -63,13 +70,27 @@ int evaluate_all_point(const nd_vector<Fint>& arr, const Fint& modulo, const Fin
                 point_evaluation[i][j] = elem.get().getX();
             }
         } else {
+            Fint prime_len = fields_used[i] - 1;
+            vector<u32> radix_vec;
+            factorize(prime_len, radix_vec);
+            u32** rev_rev = nullptr;
+            rev_init_NF(rev_s[i], rev_rev, radix_vec); // to be verified
+            
+            fft_multivar_wrapper_NF(w_s[i], *coeff_s[i], radix_vec, rev_rev,
+                mul_counter, temp_u_vec, temp_v1_vec, temp_v2_vec);
+            
             for (size_t j = 0; j < points_to_evaluate.size(); ++j) {
-                point_evaluation[i][j] = evaluate_brutal(arr, points_to_evaluate[j], mul_counter);
-                point_evaluation[i][j] %= fields_used[i];
+                nd_vector<F> elem = *coeff_s[i];
+                for (const Fint& coord : points_to_evaluate[j]) {
+                    Fint coord_mod = coord % fields_used[i];
+                    u64 coord_int = mpz2ull(coord_mod);
+                    elem = elem[rev_s[i][(dlog_s[i][coord_int]).toSize()]];
+                }
+                point_evaluation[i][j] = elem.get().getX();
             }
         }
     }
-
+    
     // reconstruct the solution using Chinese remainder theorem
     vector<Fint> interpolate(fields_used.size(), Fint(0));
     Fint common_prod = 1;
@@ -96,7 +117,10 @@ int evaluate_all_point(const nd_vector<Fint>& arr, const Fint& modulo, const Fin
         for (size_t i = 0; i < fields_used.size(); ++i) {
             temp += interpolate[i] * point_evaluation[i][j];
             if (DEBUG) {
-                cout << "\t" << fields_used[i] << ": " << point_evaluation[i][j] << endl;
+                cout << "\t" << fields_used[i] << ": " << point_evaluation[i][j];
+                Fint t = 0;
+                Fint brute = evaluate_brutal(arr, points_to_evaluate[j], t) % fields_used[i];
+                cout << ((point_evaluation[i][j] == brute) ? " == " : " != ") << brute << endl;
             }
         }
         if (DEBUG) {

@@ -111,14 +111,6 @@ void coeff_init(const nd_vector<Fint>& coeff, const u32& m, const vector<u32>& d
     recur_input(coeff, degs, modulo);
 }
 
-void rev_init(u32*& rev, u32 logn) {
-    u32 len = 1ULL << logn;
-    rev = new u32[len];
-    rev[0] = 0;
-    for (u32 i = 1; i < len; ++i)
-        rev[i] = rev[i >> 1] >> 1 | (i & 1) << (logn - 1);
-}
-
 void print_stats(Fint& mul_counter, microseconds duration) {
     cout << "\n===Result===\n";
     mpf_class speed, counter;

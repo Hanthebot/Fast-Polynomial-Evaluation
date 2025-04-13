@@ -7,6 +7,7 @@ COUNT = 5
 
 PRINT_COEFF = 0
 PRINT_RESULT = 1
+VERIFY_RESULT = 1
 M = 3
 LOG_N = 6
 SAMPLE_RANGE = [10, 30]
@@ -30,4 +31,4 @@ for i in range(COUNT):
     eval_points = "\n".join([" ".join([str(randint(1, modulo - 1)) for _ in range(M)]) for _ in range(num_samples)])
     coeff = recur_form(shape, modulo)
     with open(f"multivar_sample/input{i+6}.txt", "w", encoding="utf-8") as fil:
-        fil.write(f"{PRINT_COEFF} {PRINT_RESULT}\n{M}\n{modulo}\n{' '.join([str(sh) for sh in shape])}\n{num_samples}\n{eval_points}\n\n{coeff}")
+        fil.write(f"{PRINT_COEFF} {PRINT_RESULT} {VERIFY_RESULT}\n{M}\n{modulo}\n{' '.join([str(sh) for sh in shape])}\n{num_samples}\n{eval_points}\n\n{coeff}")

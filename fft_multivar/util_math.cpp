@@ -6,7 +6,7 @@ using namespace std;
 using namespace shk_galoiscpp;
 using namespace std::chrono;
 
-void factorize(Fint n, vector<Fint>& factors) {
+void get_all_factors(Fint n, vector<Fint>& factors) {
     Fint factor = 2;
     while (factor * factor <= n) {
         if (mpz_divisible_p(n.get_mpz_t(), factor.get_mpz_t())) {
@@ -22,6 +22,31 @@ void factorize(Fint n, vector<Fint>& factors) {
     }
 }
 
+void factorize(Fint n, vector<Fint>& factors) {
+    Fint factor = 2;
+    while (factor * factor <= n) {
+        if (mpz_divisible_p(n.get_mpz_t(), factor.get_mpz_t())) {
+            while (mpz_divisible_p(n.get_mpz_t(), factor.get_mpz_t())) {
+                mpz_tdiv_q(n.get_mpz_t(), n.get_mpz_t(), factor.get_mpz_t());
+                factors.push_back(factor);
+            }
+        }
+        mpz_nextprime(factor.get_mpz_t(), factor.get_mpz_t());
+    }
+    if (n > 1) {
+        factors.push_back(n);
+    }
+}
+
+void factorize(Fint n, vector<u32>& factors) {
+    vector<Fint> factors_mpz;
+    factorize(n, factors_mpz);
+    factors.resize(factors_mpz.size(), 0);
+    for (size_t i = 0; i < factors_mpz.size(); ++i) {
+        factors[i] = mpz2ul(factors_mpz[i]);
+    }
+}
+
 bool getRootOfUnity(const Fint& modulus, const u32& prime, Fint& prim_root) {
     random_device dev;
     mt19937 rng(dev());
@@ -32,7 +57,7 @@ bool getRootOfUnity(const Fint& modulus, const u32& prime, Fint& prim_root) {
     assert(mpz_probab_prime_p(prime_mpz.get_mpz_t(), 10) && "prime not prime");
     prime_mpz -= 1; // totient
     vector<Fint> factors;
-    factorize(prime_mpz, factors);
+    get_all_factors(prime_mpz, factors);
     Fint tester, temp;
     u64 trial;
     for (trial = 0; trial < 1000; ++trial) {
@@ -131,6 +156,10 @@ u32 log2(u64 len) {
         ++logn;
     }
     return logn;
+}
+
+u32 mpz2ul(Fint& mp) {
+    return mpz_get_ui(mp.get_mpz_t());
 }
 
 u64 mpz2ull(Fint& mp) {

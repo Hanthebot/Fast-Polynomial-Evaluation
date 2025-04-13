@@ -1,3 +1,4 @@
+#include <iostream>
 #include "nd_fft.h"
 #include "util.h"
 
@@ -9,40 +10,35 @@ void compute_point_sets(const vector<vector<Fint>>& points_to_evaluate, set<Fint
     }
 }
 
-void compute_prime_upper_bound(const Fint& capital_M, vector<u32>& fields_used) {
+bool verify_compatible(const Fint& prime, const set<Fint>& val_set, const Fint& modulo) {
+    Fint temp = prime;
+    while (temp < modulo) {
+        if (val_set.find(temp) != val_set.end()) {
+            return false;
+        }
+        temp += prime;
+    }
+    return true;
+}
+
+void compute_prime_upper_bound(const Fint& capital_M, vector<u32>& fields_used, 
+    vector<bool>& isFermat, const set<Fint>& val_set, const Fint& modulo) {
     // 16 log_2 (capital_M) is a rough upper bound of prime
     Fint temp = 1; // reset temp, now for product of primes
     Fint prime = 3; // finite field with prime 2: with only 1 element, meaningless
     while (temp < capital_M) {
-        temp *= prime;
-        fields_used.push_back(mpz_get_ui(prime.get_mpz_t()));
+        if (verify_compatible(prime, val_set, modulo)) {
+            temp *= prime;
+            isFermat.push_back(is_Fermat_prime(prime));
+            fields_used.push_back(mpz_get_ui(prime.get_mpz_t()));
+        }
         mpz_nextprime(prime.get_mpz_t(), prime.get_mpz_t());
     }
 }
 
-void verify_fermat(const vector<u32>& fields_used, vector<bool>& isFermat, set<Fint>& val_set, const Fint& modulo) {
-    isFermat.clear();
-    isFermat.resize(fields_used.size(), false);
-    for (size_t i = 0; i < fields_used.size(); ++i) {
-        if (is_Fermat_prime(fields_used[i])) {
-            Fint prime = fields_used[i];
-            Fint temp = prime;
-            bool fft_usable = true;
-            while (temp < modulo) {
-                if (val_set.find(temp) != val_set.end()) {
-                    fft_usable = false;
-                    break;
-                }
-                temp *= prime;
-            }
-            // i.e. safe to use for FFT
-            isFermat[i] = fft_usable;
-        }
-    }
-}
-
 u32 find_fields(const Fint& modulo, const Fint& capital_M, vector<u32>& fields_used, vector<bool>& isFermat, 
-    u32& max_fft_field, set<Fint>& val_set) {
+    u32& max_fft_field, const set<Fint>& val_set) {
+    isFermat.clear();
     fields_used.clear();
     if (is_Fermat_prime(modulo)) {
         fields_used.push_back(modulo.get_ui());
@@ -51,8 +47,7 @@ u32 find_fields(const Fint& modulo, const Fint& capital_M, vector<u32>& fields_u
         return 0;
     }
 
-    compute_prime_upper_bound(capital_M, fields_used);
-    verify_fermat(fields_used, isFermat, val_set, modulo);
+    compute_prime_upper_bound(capital_M, fields_used, isFermat, val_set, modulo);
     
     cout << "fields used: ";
     for (const auto& field : fields_used) {
@@ -67,7 +62,7 @@ u32 find_fields(const Fint& modulo, const Fint& capital_M, vector<u32>& fields_u
     
     max_fft_field = 1;
     for (size_t field_i = 1; field_i < fields_used.size(); ++field_i) {
-        if (fields_used[field_i] > max_fft_field && isFermat[field_i]) {
+        if (fields_used[field_i] > max_fft_field) {
             max_fft_field = fields_used[field_i];
         }
     }
@@ -113,5 +108,37 @@ void coeff_reduce(const nd_vector<Fint>& arr, nd_vector<F>*& coeff, const u32& p
     for (size_t i = 0; i < coeff->size(); ++i) {
         // execute modulus only once per element
         coeff_data[i].enforce_modulus();
+    }
+}
+
+void rev_init(u32*& rev, u32 logn) {
+    u32 len = 1ULL << logn;
+    rev = new u32[len];
+    rev[0] = 0;
+    for (u32 i = 1; i < len; ++i)
+        rev[i] = rev[i >> 1] >> 1 | (i & 1) << (logn - 1);
+}
+
+void rev_init_NF(u32*& rev, u32**& rev_rev, const vector<u32>& radix_vec) {
+    u32** revs_serial = new u32*[radix_vec.size() + 1];
+    revs_serial[0] = new u32[1];
+    revs_serial[0][0] = 0;
+    rev_rev = new u32*[radix_vec.size() + 1];
+    rev_rev[0] = new u32[1];
+    rev_rev[0][0] = 0;
+    u32 rev_size = 1;
+    for (size_t i = 1; i <= radix_vec.size(); ++i) {
+        u32 rev_size_last = rev_size;
+        rev_size *= radix_vec[i - 1];
+        revs_serial[i] = new u32[rev_size];
+        rev_rev[i] = new u32[rev_size];
+        for (size_t j = 0; j < rev_size; ++j) {
+            revs_serial[i][j] = revs_serial[i - 1][j % rev_size_last] * radix_vec[i - 1] + j / rev_size_last;
+            rev_rev[i][revs_serial[i][j]] = j;
+        }
+    }
+    rev = revs_serial[radix_vec.size()];
+    for (size_t i = 0; i < radix_vec.size(); ++i) {
+        delete [] revs_serial[i];
     }
 }

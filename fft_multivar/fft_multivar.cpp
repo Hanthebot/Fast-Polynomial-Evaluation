@@ -14,11 +14,13 @@ int main() {
     u64 total_len;
     u32 m;
     
-    bool print_coeff, print_rst;
+    bool print_coeff, print_rst, print_verify_rst;
     cout << "Print coefficients? (0/1): ";
     cin >> print_coeff;
     cout << "Print result? (0/1): ";
     cin >> print_rst;
+    cout << "Verify result? (0/1): ";
+    cin >> print_verify_rst;
     // initializing field and consts
     init_setup(modulo, degs_vec, total_len, m);
 
@@ -71,17 +73,20 @@ int main() {
         cout << "\n===computation===" << endl;
         for (size_t i = 0; i < results.size(); ++i) {
             // mul_counter: doesn't matter anymore
-            Fint brute_eval = evaluate_brutal(coeff, evaluation_points[i], mul_counter) % modulo;
             cout << "f(" << evaluation_points[i][0];
             for (size_t j = 1; j < m; ++j) {
                 cout << ", " << evaluation_points[i][j];
             }
             cout << ") = " << results[i] << " ";
-            if (results[i] != brute_eval) {
-                cout << "!= " << brute_eval << endl;
-            } else {
-                cout << "== " << brute_eval << endl;
+            if (print_verify_rst) {
+                Fint brute_eval = evaluate_brutal(coeff, evaluation_points[i], mul_counter) % modulo;
+                if (results[i] != brute_eval) {
+                    cout << "!= " << brute_eval;
+                } else {
+                    cout << "== " << brute_eval;
+                }
             }
+            cout << endl;
         }
     }
 
