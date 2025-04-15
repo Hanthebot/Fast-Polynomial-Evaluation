@@ -40,7 +40,7 @@ void init_evaluation_points(vector<vector<Fint>>& evaluation_points, const u32& 
     }
 }
 
-Field* field_setup(const u32& m, const u32& prime) {
+Field* field_setup(const u32& prime) {
     Fint modulus = prime;
     Fint rou;
     assert(getRootOfUnity(modulus, prime, rou) && "rou not found");
@@ -50,9 +50,9 @@ Field* field_setup(const u32& m, const u32& prime) {
     return field;
 }
 
-void rou_init(F*& w, F*& dlog, const F& zero_F, const u32& prime) {
-    w = new F[prime - 1];
-    dlog = new F[prime];
+void rou_init(vector<F>& w, vector<F>& dlog, const F& zero_F, const u32& prime) {
+    w.resize(prime - 1);
+    dlog.resize(prime);
     w[0] = zero_F.getOne();
     dlog[w[0].toSize()] = zero_F;
     w[1] = zero_F.getRootOfUnity();

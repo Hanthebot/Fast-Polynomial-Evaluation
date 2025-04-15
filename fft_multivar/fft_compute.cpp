@@ -98,11 +98,11 @@ void fft_nd(const F* w, const nd_vector<F>& arr, const u32* rev, u32 logn, Fint&
     }
 }
 
-void fft_NF(const F* w, F* const& arr, const vector<u32>& radix_vec, const vector<u32>& dist, const u32* const* rev_rev, const u32& len, Fint& mul_counter, F* const& temp_u, F& temp_v1, F& temp_v2);
-void fft_multivar_recur_NF(const F* w, const nd_vector<F>& arr, const vector<u32>& radix_vec, const vector<u32>& dist, const u32* const* rev_rev, const u32& len, Fint& mul_counter, nd_vector<F>& temp_u, nd_vector<F>& temp_v1, nd_vector<F>& temp_v2);
-void fft_nd_NF(const F* w, const nd_vector<F>& arr, const vector<u32>& radix_vec, const vector<u32>& dist, const u32* const* rev_rev, const u32& len, Fint& mul_counter, nd_vector<F>& temp_u, nd_vector<F>& temp_v1, nd_vector<F>& temp_v2);
+void fft_NF(const F* w, F* const& arr, const vector<u32>& radix_vec, const vector<u32>& dist, const vector<u32>* rev_rev, const u32& len, Fint& mul_counter, F* const& temp_u, F& temp_v1, F& temp_v2);
+void fft_multivar_recur_NF(const F* w, const nd_vector<F>& arr, const vector<u32>& radix_vec, const vector<u32>& dist, const vector<u32>* rev_rev, const u32& len, Fint& mul_counter, nd_vector<F>& temp_u, nd_vector<F>& temp_v1, nd_vector<F>& temp_v2);
+void fft_nd_NF(const F* w, const nd_vector<F>& arr, const vector<u32>& radix_vec, const vector<u32>& dist, const vector<u32>* rev_rev, const u32& len, Fint& mul_counter, nd_vector<F>& temp_u, nd_vector<F>& temp_v1, nd_vector<F>& temp_v2);
 
-void fft_multivar_wrapper_NF(const F* w, nd_vector<F>& arr, const vector<u32>& radix_vec, const u32* const* rev_rev, 
+void fft_multivar_wrapper_NF(const F* w, nd_vector<F>& arr, const vector<u32>& radix_vec, const vector<u32>& dist, const vector<u32>* rev_rev, 
     Fint& mul_counter, F*& temp_u_vec, F*& temp_v1_vec, F*& temp_v2_vec) {
     nd_vector<F> temp_u {arr.getDim(), arr.getShape(), arr.getUnit(), temp_u_vec, arr.size()};
     // buffer for lower dimension
@@ -110,18 +110,12 @@ void fft_multivar_wrapper_NF(const F* w, nd_vector<F>& arr, const vector<u32>& r
     span<size_t> units = arr.getUnit().subspan(1);
     nd_vector<F> temp_v1 {arr.getDim() - 1, shape, units, temp_v1_vec, arr[0].size()};
     nd_vector<F> temp_v2 {arr.getDim() - 1, shape, units, temp_v2_vec, arr[0].size()};
-    vector<u32> dist(radix_vec.size() + 1, 0);
-    Fint mod = w[0].getField()->getModulus(); // prime - 1
-    u32 len = mpz2ul(mod) - 1;
-    dist[0] = len;
-    for (size_t i = 1; i <= radix_vec.size(); ++i) {
-        dist[i] = dist[i - 1] / radix_vec[i - 1];
-    }
+    u32 len = mpz2ul(w[0].getField()->getModulus()) - 1; // prime - 1 
     fft_multivar_recur_NF(w, arr, radix_vec, dist, rev_rev, len, mul_counter, temp_u, temp_v1, temp_v2);
 }
 
 void fft_multivar_recur_NF(const F* w, const nd_vector<F>& arr, const vector<u32>& radix_vec, 
-    const vector<u32>& dist, const u32* const* rev_rev, const u32& len, Fint& mul_counter, nd_vector<F>& temp_u, nd_vector<F>& temp_v1, nd_vector<F>& temp_v2) {
+    const vector<u32>& dist, const vector<u32>* rev_rev, const u32& len, Fint& mul_counter, nd_vector<F>& temp_u, nd_vector<F>& temp_v1, nd_vector<F>& temp_v2) {
     assert(isEqual(arr.getShape(), temp_u.getShape()) && "shape does not match");
     // for temporary storage of (n-1)d array
     if (arr.getDim() == 1) {
@@ -144,7 +138,7 @@ void fft_multivar_recur_NF(const F* w, const nd_vector<F>& arr, const vector<u32
     @param arr a polynomial in coefficient form, returned as map of RoU
     @param logn value where 2 ^ logn + 1 = modulo 
  */
-void fft_NF(const F* w, F* const& arr, const vector<u32>& radix_vec, const vector<u32>& dist, const u32* const* rev_rev, const u32& len, 
+void fft_NF(const F* w, F* const& arr, const vector<u32>& radix_vec, const vector<u32>& dist, const vector<u32>* rev_rev, const u32& len, 
     Fint& mul_counter, F* const& temp_u, F& temp_v1, F& temp_v2) {
     for (size_t phase = 1; phase <= radix_vec.size(); ++phase) {
         u32 bi = 0;
@@ -188,7 +182,7 @@ void fft_NF(const F* w, F* const& arr, const vector<u32>& radix_vec, const vecto
     @param arr a polynomial in coefficient form, returned as map of RoU
     @param logn value where 2 ^ logn + 1 = modulo 
  */
-void fft_nd_NF(const F* w, const nd_vector<F>& arr, const vector<u32>& radix_vec, const vector<u32>& dist, const u32* const* rev_rev, const u32& len, 
+void fft_nd_NF(const F* w, const nd_vector<F>& arr, const vector<u32>& radix_vec, const vector<u32>& dist, const vector<u32>* rev_rev, const u32& len, 
     Fint& mul_counter, nd_vector<F>& temp_u, nd_vector<F>& temp_v1, nd_vector<F>& temp_v2) {
     for (u32 phase = 1; phase <= radix_vec.size(); ++phase) {
         u32 bi = 0;

@@ -168,6 +168,10 @@ u64 mpz2ull(const Fint& mp) {
     return result;
 }
 
+void ul2mpz(Fint& mp, const u32& input) {
+    mpz_set_ui(mp.get_mpz_t(), input);
+}
+
 void ull2mpz(Fint& mp, const u64& input) {
     mpz_import(mp.get_mpz_t(), 1, -1, sizeof(u64), 0, 0, &input);
 }

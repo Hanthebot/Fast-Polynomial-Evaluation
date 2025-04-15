@@ -114,34 +114,31 @@ void coeff_reduce(const nd_vector<Fint>& arr, nd_vector<F>*& coeff, const u32& p
     }
 }
 
-void rev_init(u32*& rev, u32 logn) {
+void rev_init(vector<u32>& rev, u32 logn) {
     u32 len = 1ULL << logn;
-    rev = new u32[len];
+    rev.resize(len);
     rev[0] = 0;
     for (u32 i = 1; i < len; ++i)
         rev[i] = rev[i >> 1] >> 1 | (i & 1) << (logn - 1);
 }
 
-void rev_init_NF(u32*& rev, u32**& rev_rev, const vector<u32>& radix_vec) {
-    u32** revs_serial = new u32*[radix_vec.size() + 1];
-    revs_serial[0] = new u32[1];
+void rev_init_NF(vector<u32>& rev, vector<vector<u32>>& rev_rev, const vector<u32>& radix_vec) {
+    vector<u32>* revs_serial = new vector<u32>[radix_vec.size() + 1];
+    revs_serial[0].resize(1);
     revs_serial[0][0] = 0;
-    rev_rev = new u32*[radix_vec.size() + 1];
-    rev_rev[0] = new u32[1];
+    rev_rev.resize(radix_vec.size() + 1);
+    rev_rev[0].resize(1);
     rev_rev[0][0] = 0;
     u32 rev_size = 1;
     for (size_t i = 1; i <= radix_vec.size(); ++i) {
         u32 rev_size_last = rev_size;
         rev_size *= radix_vec[i - 1];
-        revs_serial[i] = new u32[rev_size];
-        rev_rev[i] = new u32[rev_size];
+        revs_serial[i].resize(rev_size);
+        rev_rev[i].resize(rev_size);
         for (size_t j = 0; j < rev_size; ++j) {
             revs_serial[i][j] = revs_serial[i - 1][j % rev_size_last] * radix_vec[i - 1] + j / rev_size_last;
             rev_rev[i][revs_serial[i][j]] = j;
         }
     }
     rev = revs_serial[radix_vec.size()];
-    for (size_t i = 0; i < radix_vec.size(); ++i) {
-        delete [] revs_serial[i];
-    }
 }
