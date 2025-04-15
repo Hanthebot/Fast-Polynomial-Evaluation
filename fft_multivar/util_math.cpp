@@ -158,11 +158,11 @@ u32 log2(u64 len) {
     return logn;
 }
 
-u32 mpz2ul(Fint& mp) {
+u32 mpz2ul(const Fint& mp) {
     return mpz_get_ui(mp.get_mpz_t());
 }
 
-u64 mpz2ull(Fint& mp) {
+u64 mpz2ull(const Fint& mp) {
     u64 result = 0;
     mpz_export(&result, 0, -1, sizeof(result), 0, 0, mp.get_mpz_t());
     return result;

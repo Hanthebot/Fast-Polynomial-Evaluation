@@ -40,32 +40,35 @@ u32 find_fields(const Fint& modulo, const Fint& capital_M, vector<u32>& fields_u
     u32& max_fft_field, const set<Fint>& val_set) {
     isFermat.clear();
     fields_used.clear();
-    if (is_Fermat_prime(modulo)) {
-        fields_used.push_back(modulo.get_ui());
-        isFermat.push_back(true);
-        max_fft_field = fields_used[0];
-        return 0;
-    }
 
     compute_prime_upper_bound(capital_M, fields_used, isFermat, val_set, modulo);
     
-    cout << "fields used: ";
-    for (const auto& field : fields_used) {
-        cout << field << " ";
-    }
-    cout << endl;
     if (fields_used.size() == 0) {
         // impossible case
         cout << "Error: no field found" << endl;
         return 2;
     }
+
+    // if the modulo is prime, and field used to compute is larger than prime modulo itself:
+    // we can directly apply FFT on finite field of modulo, it will still be denser than the original method
+    u32 modulo_ul = mpz2ul(modulo);
+    if (fields_used[fields_used.size() - 1] >= modulo_ul && mpz_probab_prime_p(modulo.get_mpz_t(), 10)) {
+        fields_used.clear();
+        isFermat.clear();
+        fields_used.push_back(modulo_ul);
+        isFermat.push_back(is_Fermat_prime(modulo));
+        // set validation: not done, as coefficients will be in [1, modulo) (from input validation)
+    }
     
     max_fft_field = 1;
-    for (size_t field_i = 1; field_i < fields_used.size(); ++field_i) {
-        if (fields_used[field_i] > max_fft_field) {
-            max_fft_field = fields_used[field_i];
+    cout << "fields used: ";
+    for (const auto& field : fields_used) {
+        cout << field << ", ";
+        if (field > max_fft_field) {
+            max_fft_field = field;
         }
     }
+    cout << endl;
     return 0;
 }
 

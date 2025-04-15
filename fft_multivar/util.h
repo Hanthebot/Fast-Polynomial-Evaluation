@@ -21,8 +21,8 @@ Fint pow(Fint base, Fint exp);
 void compute_M(Fint& capital_M, const vector<u32>& degs_vec, const Fint& modulo, const u64& total_len, const u32& m);
 bool is_Fermat_prime(const Fint& prime);
 u32 log2(u64 len);
-u32 mpz2ul(Fint& mp);
-u64 mpz2ull(Fint& mp);
+u32 mpz2ul(const Fint& mp);
+u64 mpz2ull(const Fint& mp);
 void ull2mpz(Fint& mp, const u64& input);
 
 #endif // UTIL_H
