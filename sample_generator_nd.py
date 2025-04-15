@@ -30,5 +30,5 @@ for i in range(COUNT):
     num_samples = randint(SAMPLE_RANGE[0], SAMPLE_RANGE[1])
     eval_points = "\n".join([" ".join([str(randint(1, modulo - 1)) for _ in range(M)]) for _ in range(num_samples)])
     coeff = recur_form(shape, modulo)
-    with open(f"multivar_sample/input{i+6}.txt", "w", encoding="utf-8") as fil:
+    with open(f"multivar_sample/input{i+1}.txt", "w", encoding="utf-8") as fil:
         fil.write(f"{PRINT_COEFF} {PRINT_RESULT} {VERIFY_RESULT}\n{M}\n{modulo}\n{' '.join([str(sh) for sh in shape])}\n{num_samples}\n{eval_points}\n\n{coeff}")

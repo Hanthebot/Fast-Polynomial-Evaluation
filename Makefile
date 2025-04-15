@@ -14,7 +14,7 @@ CFLAGS = -std=c++20 -Wall -O3 -o
 LFLAGS = -std=c++20 -Wall -O3 -c
 GMP = -lgmp -lgmpxx
 OBJS   = gfelement.o galoisfield.o modular_arith.o fft.o util.o
-OBJS_MULT   = nd_fft.o nd_fft_helper.o fft_brutal.o fft_compute.o util_math.o util_multivar.o gfelement.o galoisfield.o modular_arith.o nd_vector.o
+OBJS_MULT   = nd_fft.o nd_fft_helper.o fft_brute.o fft_compute.o util_math.o util_multivar.o gfelement.o galoisfield.o modular_arith.o nd_vector.o
 
 fft_multivar: fft_multivar/fft_multivar.cpp fft_multivar/fft_multivar.h  fft_multivar/nd_fft.h fft_multivar/util.h $(OBJS_MULT)
 	$(CC) $(CFLAGS) fft_multivar fft_multivar/fft_multivar.cpp $(OBJS_MULT) $(GMP)
@@ -25,8 +25,8 @@ nd_fft.o: fft_multivar/nd_fft.cpp fft_multivar/fft_multivar.h fft_multivar/nd_ff
 nd_fft_helper.o: fft_multivar/nd_fft_helper.cpp fft_multivar/fft_multivar.h fft_multivar/nd_fft.h fft_multivar/util.h
 	$(CC) $(LFLAGS) fft_multivar/nd_fft_helper.cpp $(GMP)
 
-fft_brutal.o: fft_multivar/fft_brutal.cpp fft_multivar/fft_multivar.h
-	$(CC) $(LFLAGS) fft_multivar/fft_brutal.cpp $(GMP)
+fft_brute.o: fft_multivar/fft_brute.cpp fft_multivar/fft_multivar.h
+	$(CC) $(LFLAGS) fft_multivar/fft_brute.cpp $(GMP)
 
 fft_compute.o: fft_multivar/fft_compute.cpp fft_multivar/fft_multivar.h fft_multivar/nd_fft.h fft_multivar/util.h
 	$(CC) $(LFLAGS) fft_multivar/fft_compute.cpp $(GMP)
