@@ -81,6 +81,7 @@ int evaluate_all_point(const nd_vector<Fint>& arr, const Fint& modulo, const Fin
                     u64 coord_int = mpz_get_ui(coord_mod.get_mpz_t());
                     elem = elem[FD[i].rev[(dlog[coord_int]).toSize()]];
                 }
+                elem.get().enforce_modulus();
                 point_evaluation[i][j] = elem.get().getX();
             }
         } else {
@@ -93,6 +94,7 @@ int evaluate_all_point(const nd_vector<Fint>& arr, const Fint& modulo, const Fin
                     u64 coord_int = mpz2ull(coord_mod);
                     elem = elem[FD[i].rev[(dlog[coord_int]).toSize()]];
                 }
+                elem.get().enforce_modulus();
                 point_evaluation[i][j] = elem.get().getX();
             }
         }

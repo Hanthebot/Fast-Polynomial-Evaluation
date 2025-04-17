@@ -60,6 +60,7 @@ void rou_init(vector<F>& w, vector<F>& dlog, const F& zero_F, const u32& prime) 
     Fint count = 2;
     for (u32 i = 2; i < prime - 1; ++i) {
         w[i] = w[i - 1] * w[1];
+        w[i].enforce_modulus();
         dlog[w[i].toSize()] = count;
         count++;
     }

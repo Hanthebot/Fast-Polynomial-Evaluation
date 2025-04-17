@@ -18,7 +18,7 @@ void fft_multivar_wrapper(const F* w, nd_vector<F>& arr, const u32* rev, u32 log
     vector<size_t> iter_temp_shape;
     size_t whole_size = arr.size();
     size_t shape_default = arr.getShape()[0];
-    vector<size_t> original_shape(arr.getDim(), shape_default);
+    span<size_t> original_shape = arr.getShape();
     for (size_t dim_i = 1; dim_i <= original_shape.size(); ++dim_i) {
         size_t iter_size = whole_size / pow(shape_default, dim_i);
         iter_array_shape.clear();
@@ -109,7 +109,7 @@ void fft_multivar_wrapper_NF(const F* w, nd_vector<F>& arr, const vector<u32>& r
     size_t whole_size = arr.size();
     size_t shape_default = arr.getShape()[0];
     u32 len = shape_default; // prime - 1 
-    vector<size_t> original_shape(arr.getDim(), shape_default);
+    span<size_t> original_shape = arr.getShape();
     for (size_t dim_i = 1; dim_i <= original_shape.size(); ++dim_i) {
         size_t iter_size = whole_size / pow(shape_default, dim_i);
         iter_array_shape.clear();
