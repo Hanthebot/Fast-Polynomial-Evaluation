@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <span>
+#include <vector>
 #include <cassert>
 
 // using namespace std;
@@ -111,9 +112,15 @@ class nd_vector {
             u32 new_size = 1;
             for (const auto& v : new_shape)
                 new_size *= v;
-            assert((size() == new_size) && "shape does not match");
+            assert((size_ == new_size) && "shape does not match");
             shape = new_shape;
             dim = new_shape.size();
+            std::vector<size_t>* new_unit = new std::vector<size_t>(dim, 1);
+            unit = std::span<size_t>(*new_unit);
+            unit[0] = size_ / new_shape[0];
+            for (size_t i = 1; i < dim; ++i) {
+                unit[i] = unit[i - 1] / new_shape[i];
+            }
         }
         
         /**
@@ -124,7 +131,7 @@ class nd_vector {
         */
         void set_mul(const nd_vector<T>& a, const nd_vector<T>& b) const {
             assert(a.size() == b.size() && "size does not match");
-            assert(size() == a.size() && "size does not match");
+            assert(size_ == a.size() && "size does not match");
             for (size_t i = 0; i < a.size(); ++i)
                 data[i] = a.data[i] * b.data[i];
         }
@@ -136,7 +143,7 @@ class nd_vector {
         * @param b The scalar. 
         */
         void set_mul(const nd_vector<T>& a, const T& b) const {
-            assert(size() == a.size() && "size does not match");
+            assert(size_ == a.size() && "size does not match");
             for (size_t i = 0; i < size_; ++i)
                 data[i] = a.data[i] * b;
         }
@@ -149,7 +156,7 @@ class nd_vector {
         */
         void set_add(const nd_vector<T>& a, const nd_vector<T>& b) const {
             assert(a.size() == b.size() && "size does not match");
-            assert(size() == a.size() && "size does not match");
+            assert(size_ == a.size() && "size does not match");
             for (size_t i = 0; i < size_; ++i)
                 data[i] = a.data[i] + b.data[i];
         }
@@ -162,7 +169,7 @@ class nd_vector {
         */
         void set_sub(const nd_vector<T>& a, const nd_vector<T>& b) const {
             assert(a.size() == b.size() && "size does not match");
-            assert(size() == a.size() && "size does not match");
+            assert(size_ == a.size() && "size does not match");
             for (size_t i = 0; i < size_; ++i)
                 data[i] = a.data[i] - b.data[i];
         }
@@ -201,6 +208,7 @@ class nd_vector {
 template<typename T>
 nd_vector<T>::nd_vector(const size_t& dim, const std::span<size_t>& shape, const std::span<size_t>& unit, T* const data, const size_t& size_) : dim{dim}, shape{shape}, unit{unit}, data{data}, size_{size_} {
     assert(shape.size() == dim && "dimension and shape does not match");
+    assert(unit.size() == dim && "dimension and unit does not match");
 }
 
 template<typename T>

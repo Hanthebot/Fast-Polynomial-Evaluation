@@ -2,7 +2,6 @@
 #include "util.h"
 
 void fft(const F* w, F* const& arr, const u32* rev, u32 logn, Fint& mul_counter, F& u, F& v);
-void fft_multivar_recur(const F* w, const nd_vector<F>& arr, const u32* rev, u32 logn, Fint& mul_counter, nd_vector<F>& temp_u, nd_vector<F>& temp_v);
 void fft_nd(const F* w, const nd_vector<F>& arr, const u32* rev, u32 logn, Fint& mul_counter, nd_vector<F>& temp_u, nd_vector<F>& temp_v);
 
 void fft_multivar_wrapper(const F* w, nd_vector<F>& arr, const u32* rev, u32 logn, Fint& mul_counter,
@@ -15,27 +14,35 @@ void fft_multivar_wrapper(const F* w, nd_vector<F>& arr, const u32* rev, u32 log
     span<size_t> units = arr.getUnit().subspan(1);
     nd_vector<F> temp_u {arr.getDim() - 1, shape, units, temp_u_vec, arr[0].size()};
     nd_vector<F> temp_v {arr.getDim() - 1, shape, units, temp_v_vec, arr[0].size()};
-    fft_multivar_recur(w, arr, rev, logn, mul_counter, temp_u, temp_v);
-}
-
-void fft_multivar_recur(const F* w, const nd_vector<F>& arr, 
-    const u32* rev, u32 logn, Fint& mul_counter,
-    nd_vector<F>& temp_u, nd_vector<F>& temp_v) {
-    assert(isEqual(arr.getShape().subspan(1), temp_u.getShape()) && "shape does not match");
-    assert(isEqual(arr.getShape().subspan(1), temp_v.getShape()) && "shape does not match");
-    if (arr.getDim() == 1) {
-        F u = temp_u.get();
-        F v = temp_v.get();
-        fft(w, arr.ptr(), rev, logn, mul_counter, u, v);
-        return;
+    vector<size_t> iter_array_shape;
+    vector<size_t> iter_temp_shape;
+    size_t whole_size = arr.size();
+    size_t shape_default = arr.getShape()[0];
+    vector<size_t> original_shape(arr.getDim(), shape_default);
+    for (size_t dim_i = 1; dim_i <= original_shape.size(); ++dim_i) {
+        size_t iter_size = whole_size / pow(shape_default, dim_i);
+        iter_array_shape.clear();
+        iter_array_shape.resize(dim_i + 1, shape_default);
+        iter_temp_shape.resize(dim_i, shape_default);
+        iter_temp_shape[0] = iter_array_shape[0] = iter_size;
+        arr.reshape(iter_array_shape);
+        temp_u.reshape(iter_temp_shape);
+        temp_v.reshape(iter_temp_shape);
+        if (dim_i == 1) {
+            for (size_t arr_i = 0; arr_i < iter_size; ++arr_i) {
+                F& u = temp_u.get(arr_i);
+                F& v = temp_v.get(arr_i);
+                fft(w, arr[arr_i].ptr(), rev, logn, mul_counter, u, v);
+            }
+        } else {
+            for (size_t arr_i = 0; arr_i < iter_size; ++arr_i) {
+                nd_vector<F> u = temp_u[arr_i];
+                nd_vector<F> v = temp_v[arr_i];
+                fft_nd(w, arr[arr_i], rev, logn, mul_counter, u, v);
+            }
+        }
     }
-    // for temporary storage of (n-1)d array
-    nd_vector<F> temp_u_ = temp_u[0];
-    nd_vector<F> temp_v_ = temp_v[0];
-    for (size_t i = 0; i < arr.getShape()[0]; ++i) {
-        fft_multivar_recur(w, arr[i], rev, logn, mul_counter, temp_u_, temp_v_);
-    }
-    fft_nd(w, arr, rev, logn, mul_counter, temp_u, temp_v);
+    arr.reshape(original_shape);
 }
 
 /**
@@ -58,13 +65,6 @@ void fft(const F* w, F* const& arr, const u32* rev, u32 logn, Fint& mul_counter,
             }
             mul_counter += (i >> 1);
             ++j_count;
-        }
-    }
-    for (u32 i = 0; i < len; ++i) {
-        if (i < rev[i]) {
-            u = arr[i];
-            arr[i] = arr[rev[i]];
-            arr[rev[i]] = u;
         }
     }
 }
@@ -91,15 +91,9 @@ void fft_nd(const F* w, const nd_vector<F>& arr, const u32* rev, u32 logn, Fint&
             ++j_count;
         }
     }
-    for (u32 i = 0; i < len; ++i) {
-        if (i < rev[i]) {
-            arr[i].swap(arr[rev[i]]);
-        }
-    }
 }
 
 void fft_NF(const F* w, F* const& arr, const vector<u32>& radix_vec, const vector<u32>& dist, const vector<u32>* rev_rev, const u32& len, Fint& mul_counter, F* const& temp_u, F& temp_v1, F& temp_v2);
-void fft_multivar_recur_NF(const F* w, const nd_vector<F>& arr, const vector<u32>& radix_vec, const vector<u32>& dist, const vector<u32>* rev_rev, const u32& len, Fint& mul_counter, nd_vector<F>& temp_u, nd_vector<F>& temp_v1, nd_vector<F>& temp_v2);
 void fft_nd_NF(const F* w, const nd_vector<F>& arr, const vector<u32>& radix_vec, const vector<u32>& dist, const vector<u32>* rev_rev, const u32& len, Fint& mul_counter, nd_vector<F>& temp_u, nd_vector<F>& temp_v1, nd_vector<F>& temp_v2);
 
 void fft_multivar_wrapper_NF(const F* w, nd_vector<F>& arr, const vector<u32>& radix_vec, const vector<u32>& dist, const vector<u32>* rev_rev, 
@@ -110,28 +104,40 @@ void fft_multivar_wrapper_NF(const F* w, nd_vector<F>& arr, const vector<u32>& r
     span<size_t> units = arr.getUnit().subspan(1);
     nd_vector<F> temp_v1 {arr.getDim() - 1, shape, units, temp_v1_vec, arr[0].size()};
     nd_vector<F> temp_v2 {arr.getDim() - 1, shape, units, temp_v2_vec, arr[0].size()};
-    u32 len = mpz2ul(w[0].getField()->getModulus()) - 1; // prime - 1 
-    fft_multivar_recur_NF(w, arr, radix_vec, dist, rev_rev, len, mul_counter, temp_u, temp_v1, temp_v2);
-}
-
-void fft_multivar_recur_NF(const F* w, const nd_vector<F>& arr, const vector<u32>& radix_vec, 
-    const vector<u32>& dist, const vector<u32>* rev_rev, const u32& len, Fint& mul_counter, nd_vector<F>& temp_u, nd_vector<F>& temp_v1, nd_vector<F>& temp_v2) {
-    assert(isEqual(arr.getShape(), temp_u.getShape()) && "shape does not match");
-    // for temporary storage of (n-1)d array
-    if (arr.getDim() == 1) {
-        F* temp_u_ = temp_u.ptr();
-        F& temp_v1_ = temp_v1.get();
-        F& temp_v2_ = temp_v2.get();
-        fft_NF(w, arr.ptr(), radix_vec, dist, rev_rev, len, mul_counter, temp_u_, temp_v1_, temp_v2_);
-        return;
+    vector<size_t> iter_array_shape;
+    vector<size_t> iter_temp_shape;
+    size_t whole_size = arr.size();
+    size_t shape_default = arr.getShape()[0];
+    u32 len = shape_default; // prime - 1 
+    vector<size_t> original_shape(arr.getDim(), shape_default);
+    for (size_t dim_i = 1; dim_i <= original_shape.size(); ++dim_i) {
+        size_t iter_size = whole_size / pow(shape_default, dim_i);
+        iter_array_shape.clear();
+        // changing shape while nd_vector is holding it: not safe in general
+        iter_array_shape.resize(dim_i + 1, shape_default);
+        iter_temp_shape.resize(dim_i, shape_default);
+        iter_temp_shape[0] = iter_array_shape[0] = iter_size;
+        arr.reshape(iter_array_shape);
+        temp_u.reshape(iter_array_shape);
+        temp_v1.reshape(iter_temp_shape);
+        temp_v2.reshape(iter_temp_shape);
+        if (dim_i == 1) {
+            for (size_t arr_i = 0; arr_i < iter_size; ++arr_i) {
+                F* u = temp_u[arr_i].ptr();
+                F& v1 = temp_v1.get(arr_i);
+                F& v2 = temp_v2.get(arr_i);
+                fft_NF(w, arr[arr_i].ptr(), radix_vec, dist, rev_rev, len, mul_counter, u, v1, v2);
+            }
+        } else {
+            for (size_t arr_i = 0; arr_i < iter_size; ++arr_i) {
+                nd_vector<F> u = temp_u[arr_i];
+                nd_vector<F> v1 = temp_v1[arr_i];
+                nd_vector<F> v2 = temp_v2[arr_i];
+                fft_nd_NF(w, arr[arr_i], radix_vec, dist, rev_rev, len, mul_counter, u, v1, v2);
+            }
+        }
     }
-    nd_vector<F> temp_u_ = temp_u[0];
-    nd_vector<F> temp_v1_ = temp_v1[0];
-    nd_vector<F> temp_v2_ = temp_v2[0];
-    for (size_t i = 0; i < arr.getShape()[0]; ++i) {
-        fft_multivar_recur_NF(w, arr[i], radix_vec, dist, rev_rev, len, mul_counter, temp_u_, temp_v1_, temp_v2_);
-    }
-    fft_nd_NF(w, arr, radix_vec, dist, rev_rev, len, mul_counter, temp_u, temp_v1, temp_v2);
+    arr.reshape(original_shape);
 }
 
 /**

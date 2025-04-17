@@ -79,7 +79,7 @@ int evaluate_all_point(const nd_vector<Fint>& arr, const Fint& modulo, const Fin
                 for (const Fint& coord : points_to_evaluate[j]) {
                     Fint coord_mod = coord % FD[i].prime;
                     u64 coord_int = mpz_get_ui(coord_mod.get_mpz_t());
-                    elem = elem[(dlog[coord_int]).toSize()];
+                    elem = elem[FD[i].rev[(dlog[coord_int]).toSize()]];
                 }
                 point_evaluation[i][j] = elem.get().getX();
             }
