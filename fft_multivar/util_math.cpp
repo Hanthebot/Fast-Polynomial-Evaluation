@@ -3,7 +3,6 @@
 #include <random>
 
 using namespace std;
-using namespace shk_galoiscpp;
 using namespace std::chrono;
 
 void get_all_factors(Fint n, vector<Fint>& factors) {
@@ -53,7 +52,7 @@ bool getRootOfUnity(const Fint& modulus, const u32& prime, Fint& prim_root) {
     uniform_int_distribution<mt19937::result_type> dist(1, prime - 1);
     // finding primitive root of prime using Euler's Totient Theorem
     // reference: https://www.geeksforgeeks.org/primitive-root-of-a-prime-number-n-modulo-n/
-    Fint prime_mpz = prime;
+    Fint prime_mpz = modulus;
     assert(mpz_probab_prime_p(prime_mpz.get_mpz_t(), 10) && "prime not prime");
     prime_mpz -= 1; // totient
     vector<Fint> factors;
@@ -174,4 +173,40 @@ void ul2mpz(Fint& mp, const u32& input) {
 
 void ull2mpz(Fint& mp, const u64& input) {
     mpz_import(mp.get_mpz_t(), 1, -1, sizeof(u64), 0, 0, &input);
+}
+
+void enforce_modulus(Fint& mp, const Fint& modulo) {
+    if (mp >= modulo)
+       mp %= modulo;
+    else if (mp < 0) {
+       while (mp < 0)
+          mp += modulo;
+    }
+}
+
+inline Fint inverseModular(Fint a, Fint mod)
+{
+   Fint result;
+   int flag = mpz_invert(result.get_mpz_t(), a.get_mpz_t(), mod.get_mpz_t());
+
+   assert(flag != 0 && "ErrorNoInverse: No inverse found");
+
+   return result;
+}
+
+Fint multInverse(const Fint& m, const Fint& prime_mp, const Fint* dlog = nullptr, const Fint* w = nullptr)
+{
+   if (m == 0) assert(0 && "ErrorNoInverse: No inverse found");
+   if (m == 1) {
+      return 1;
+   }
+   if (dlog && w) {
+      Fint temp = prime_mp - 1 - dlog[(ptrdiff_t) mpz_get_ui(m.get_mpz_t())];
+      return w[(ptrdiff_t)
+         mpz_get_ui(
+            temp.get_mpz_t()
+         )];
+   }
+
+   return inverseModular(m, prime_mp);
 }

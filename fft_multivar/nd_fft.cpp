@@ -21,24 +21,28 @@ int evaluate_all_point(const nd_vector<Fint>& arr, const Fint& modulo, const Fin
     FieldData* FD = new FieldData[fields_used.size()]; // field data
     
     Fint** point_evaluation = new Fint*[fields_used.size()];
-    F* coeff_data = new F[pow(max_fft_field - 1, m)]; // for reduced coefficients
-    nd_vector<F>** coeff_s = new nd_vector<F>*[fields_used.size()];
+    Fint* coeff_data = new Fint[pow(max_fft_field - 1, m)]; // for reduced coefficients
+    nd_vector<Fint>** coeff_s = new nd_vector<Fint>*[fields_used.size()];
     vector<size_t>* shape_vec_s = new vector<size_t>[fields_used.size()];
     vector<size_t>* unit_vec_s = new vector<size_t>[fields_used.size()];
     
-    F* temp_u_vec = new F[pow(max_fft_field - 1, m)]; // temporary storage for FFT
-    F* temp_v1_vec = new F[pow(max_fft_field - 1, m - 1)]; // temporary storage for value storage
-    F* temp_v2_vec = new F[pow(max_fft_field - 1, m - 1)]; // temporary storage for value storage
+    Fint* temp_u_vec = new Fint[pow(max_fft_field - 1, m)]; // temporary storage for FFT
+    Fint* temp_v1_vec = new Fint[pow(max_fft_field - 1, m - 1)]; // temporary storage for value storage
+    Fint* temp_v2_vec = new Fint[pow(max_fft_field - 1, m - 1)]; // temporary storage for value storage
     
     for (size_t i = 0; i < fields_used.size(); ++i) {
+        auto start = chrono::high_resolution_clock::now();
         span<size_t> shape, units;
         u64 buf_size = pow(fields_used[i] - 1, m);
         
         FD[i].prime = fields_used[i];
+        ul2mpz(FD[i].prime_mp, fields_used[i]);
         factorize(FD[i].prime - 1, FD[i].radix_vec);
-        FD[i].field = *field_setup(FD[i].prime);
-        FD[i].zero_F.setField(&(FD[i].field));
-        rou_init(FD[i].w, FD[i].dlog, FD[i].zero_F, FD[i].prime);
+        if (!getRootOfUnity(FD[i].prime_mp, FD[i].prime, FD[i].rou)) {
+            cout << "Error: root of unity not found for field " << fields_used[i] << endl;
+            return 2;
+        }
+        rou_init(FD[i].w, FD[i].dlog, FD[i].prime, FD[i].prime_mp, FD[i].rou);
         
         if (isFermat[i]) {
             rev_init(FD[i].rev, log2(FD[i].prime - 1));
@@ -52,51 +56,37 @@ int evaluate_all_point(const nd_vector<Fint>& arr, const Fint& modulo, const Fin
         }
         
         // for ease of use
-        F* w = FD[i].w.data();
-        F* dlog = FD[i].dlog.data();
-        Field* field = &(FD[i].field);
-        field->setDlogW(dlog, w);
+        Fint* w = FD[i].w.data();
+        Fint* dlog = FD[i].dlog.data();
         point_evaluation[i] = new Fint[points_to_evaluate.size()];
         construct_nd_vector_helper(shape_vec_s[i], shape, unit_vec_s[i], units, m, FD[i].prime);
         
-        init_coeff_field(coeff_data, arr.getDim(), buf_size, FD[i].zero_F);
+        init_coeff_field(coeff_data, arr.getDim(), buf_size);
         
-        coeff_s[i] = new nd_vector<F>(m, shape, units, coeff_data, buf_size);
+        coeff_s[i] = new nd_vector<Fint>(m, shape, units, coeff_data, buf_size);
         coeff_reduce(arr, coeff_s[i], FD[i].prime);
-        for (size_t j = 0; j < pow(FD[i].prime - 1, m); ++j) {
-            temp_u_vec[j].setField(field);
-        }
-        for (size_t j = 0; j < pow(FD[i].prime - 1, m - 1); ++j) {
-            temp_v1_vec[j].setField(field);
-            temp_v2_vec[j].setField(field);
-        }
         if (isFermat[i]) {
             u32 local_logn = log2(FD[i].prime - 1);
             fft_multivar_wrapper(w, *coeff_s[i], FD[i].rev.data(), local_logn, 
                 mul_counter, temp_v1_vec, temp_v2_vec);
-            for (size_t j = 0; j < points_to_evaluate.size(); ++j) {
-                nd_vector<F> elem = *coeff_s[i];
-                for (const Fint& coord : points_to_evaluate[j]) {
-                    Fint coord_mod = coord % FD[i].prime;
-                    u64 coord_int = mpz_get_ui(coord_mod.get_mpz_t());
-                    elem = elem[FD[i].rev[(dlog[coord_int]).toSize()]];
-                }
-                elem.get().enforce_modulus();
-                point_evaluation[i][j] = elem.get().getX();
-            }
         } else {
             fft_multivar_wrapper_NF(w, *coeff_s[i], FD[i].radix_vec, FD[i].dist, FD[i].rev_rev.data(),
-                mul_counter, temp_u_vec, temp_v1_vec, temp_v2_vec);
-            for (size_t j = 0; j < points_to_evaluate.size(); ++j) {
-                nd_vector<F> elem = *coeff_s[i];
-                for (const Fint& coord : points_to_evaluate[j]) {
-                    Fint coord_mod = coord % FD[i].prime;
-                    u64 coord_int = mpz2ull(coord_mod);
-                    elem = elem[FD[i].rev[(dlog[coord_int]).toSize()]];
-                }
-                elem.get().enforce_modulus();
-                point_evaluation[i][j] = elem.get().getX();
+            mul_counter, temp_u_vec, temp_v1_vec, temp_v2_vec);
+        }
+        for (size_t j = 0; j < points_to_evaluate.size(); ++j) {
+            nd_vector<Fint> elem = *coeff_s[i];
+            for (const Fint& coord : points_to_evaluate[j]) {
+                Fint coord_mod = coord % FD[i].prime;
+                u64 coord_int = mpz2ull(coord_mod);
+                elem = elem[FD[i].rev[mpz2ul(dlog[coord_int])]];
             }
+            enforce_modulus(elem.get(), FD[i].prime);
+            point_evaluation[i][j] = elem.get();
+        }
+        if (DEBUG) {
+            auto end = chrono::high_resolution_clock::now();
+            auto duration = chrono::duration_cast<chrono::microseconds>(end - start).count();
+            cout << "Field " << fields_used[i] << " evaluated in " << duration << " μs" << endl;
         }
     }
     
@@ -104,12 +94,12 @@ int evaluate_all_point(const nd_vector<Fint>& arr, const Fint& modulo, const Fin
     vector<Fint> interpolate(fields_used.size(), Fint(0));
     Fint common_prod = 1;
     for (size_t i = 0; i < fields_used.size(); ++i) {
-        common_prod *= FD[i].field.getModulus();
+        common_prod *= FD[i].prime_mp;
     }
     
     for (size_t i = 0; i < fields_used.size(); ++i) {
-        Fint temp = common_prod / FD[i].field.getModulus();
-        Fint inv = multInverse(temp % FD[i].field.getModulus(), &(FD[i].field));
+        Fint temp = common_prod / FD[i].prime_mp;
+        Fint inv = multInverse(temp % FD[i].prime_mp, FD[i].prime_mp, FD[i].dlog.data(), FD[i].w.data());
         interpolate[i] = inv * temp;
     }
 

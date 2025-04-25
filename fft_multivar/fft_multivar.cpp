@@ -4,7 +4,6 @@
 #include "util.h"
 
 using namespace std;
-using namespace shk_galoiscpp;
 
 int main() {
     vector<u32> degs_vec;

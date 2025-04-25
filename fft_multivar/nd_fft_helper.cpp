@@ -84,18 +84,18 @@ void construct_nd_vector_helper(vector<size_t>& shape_vec, span<size_t>& shape,
     units = unit_vec;
 }
 
-void init_coeff_field(F*& coeff_data, const u32& m, const u64& buf_size, const F& zero_F) {
+void init_coeff_field(Fint*& coeff_data, const u32& m, const u64& buf_size) {
     for (size_t j = 0; j < buf_size; ++j)
-        coeff_data[j] = zero_F.getZero();
+        coeff_data[j] = 0;
 }
 
-void coeff_reduce_recur(const nd_vector<Fint>& arr, const nd_vector<F>& coeff, const u32& mod) {
+void coeff_reduce_recur(const nd_vector<Fint>& arr, const nd_vector<Fint>& coeff, const u32& mod) {
     if (arr.getDim() == 0) {
-        coeff.ptr()->raw_add(arr.get());
+        *(coeff.ptr()) += arr.get();
     }
     if (arr.getDim() == 1) {
         for (size_t i = 0; i < arr.getShape()[0]; ++i) {
-            (coeff.ptr()+(i % mod))->raw_add(arr.get(i));
+            *(coeff.ptr()+(i % mod)) += arr.get(i);
         }
         return;
     }
@@ -104,13 +104,23 @@ void coeff_reduce_recur(const nd_vector<Fint>& arr, const nd_vector<F>& coeff, c
     }
 }
 
-void coeff_reduce(const nd_vector<Fint>& arr, nd_vector<F>*& coeff, const u32& prime) {
+void coeff_reduce(const nd_vector<Fint>& arr, nd_vector<Fint>*& coeff, const u32& prime) {
     // reduce coefficients into field
+    Fint prime_mp;
+    ul2mpz(prime_mp, prime);
     coeff_reduce_recur(arr, *coeff, prime - 1); // for modulus
-    F* coeff_data = coeff->ptr();
+    Fint* coeff_data = coeff->ptr();
+    Fint temp;
     for (size_t i = 0; i < coeff->size(); ++i) {
         // execute modulus only once per element
-        coeff_data[i].enforce_modulus();
+        if (coeff_data[i] >= prime_mp) {
+            coeff_data[i] %= prime_mp;
+        } else if (coeff_data[i] < 0) {
+            while (coeff_data[i] < 0) {
+                coeff_data[i] += prime_mp;
+            }
+        }
+        // enforce_modulus(coeff_data[i], prime_mp);
     }
 }
 

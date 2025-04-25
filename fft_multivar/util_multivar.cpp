@@ -3,7 +3,6 @@
 #include <random>
 
 using namespace std;
-using namespace shk_galoiscpp;
 using namespace std::chrono;
 
 void init_setup(Fint& modulo, vector<u32>& degs_vec, u64& total_len, u32& m) {
@@ -40,50 +39,21 @@ void init_evaluation_points(vector<vector<Fint>>& evaluation_points, const u32& 
     }
 }
 
-Field* field_setup(const u32& prime) {
-    Fint modulus = prime;
-    Fint rou;
-    assert(getRootOfUnity(modulus, prime, rou) && "rou not found");
-    Field* field = new Field(modulus, 1, rou);
-    // cout << *field;
-
-    return field;
-}
-
-void rou_init(vector<F>& w, vector<F>& dlog, const F& zero_F, const u32& prime) {
+void rou_init(vector<Fint>& w, vector<Fint>& dlog, const u32& prime, const Fint& prime_mp, const Fint& rou) {
     w.resize(prime - 1);
     dlog.resize(prime);
-    w[0] = zero_F.getOne();
-    dlog[w[0].toSize()] = zero_F;
-    w[1] = zero_F.getRootOfUnity();
-    dlog[w[1].toSize()] = zero_F.getOne();
+    w[0] = 1;
+    dlog[mpz2ul(w[0])] = 0;
+    w[1] = rou;
+    dlog[mpz2ul(w[1])] = 1;
     Fint count = 2;
     for (u32 i = 2; i < prime - 1; ++i) {
         w[i] = w[i - 1] * w[1];
-        w[i].enforce_modulus();
-        dlog[w[i].toSize()] = count;
+        enforce_modulus(w[i], prime_mp);
+        dlog[mpz2ul(w[i])] = count;
         count++;
     }
     // mul_counter += len-2;
-}
-
-void recur_input(const nd_vector<F>& coeff, const span<u32>& degs, Field* const field) {
-    if (degs.size() == 0) return;
-    if (degs.size() == 1) {
-        Fint temp;
-        for (u32 i = 0; i <= degs[0]; ++i) {
-            // in case degree < len, not using operator>> on nd_vector directly, but get()
-            cin >> temp;
-            coeff[i].get() = {field, temp};
-        }
-        for (u32 i = degs[0] + 1; i < coeff.getShape()[0]; ++i) {
-            coeff[i].get() = {field, 0};
-        }
-        return;
-    }
-    for (u32 i = 0; i <= degs[0]; ++i) {
-        recur_input(coeff[i], degs.subspan(1), field);
-    }
 }
 
 void recur_input(const nd_vector<Fint>& coeff, const span<const u32>& degs, const Fint& modulo) {
@@ -93,7 +63,8 @@ void recur_input(const nd_vector<Fint>& coeff, const span<const u32>& degs, cons
         for (u32 i = 0; i <= degs[0]; ++i) {
             // in case degree < len, not using operator>> on nd_vector directly, but get()
             cin >> temp;
-            *(coeff.ptr() + i) = temp % modulo;
+            enforce_modulus(temp, modulo);
+            *(coeff.ptr() + i) = temp;
         }
         return;
     }
@@ -118,6 +89,7 @@ void print_stats(Fint& mul_counter, microseconds duration) {
 
     mpf_set_si(speed.get_mpf_t(), duration.count());
     mpf_set_si(counter.get_mpf_t(), mul_counter.get_si());
+    if (counter == 0) counter = 1;
     speed /= counter;
 
     cout << "It took " << duration.count() << " μs" << endl;
@@ -125,25 +97,21 @@ void print_stats(Fint& mul_counter, microseconds duration) {
     cout << "Speed: " << speed << " s/M mult" << endl;
 }
 
-void print_dlog(const nd_vector<F>& coeff, F* dlog, const F& zero_F, const u32& prime, const string& prefix) {
+void print_dlog(const nd_vector<Fint>& coeff, Fint* dlog, const u32& prime, const string& prefix) {
     if (coeff.getDim() == 0) {
         cout << prefix << coeff.get() << "\n";
         return;
     }
     if (coeff.getDim() == 1) {
-        u32 counter = 1;
-        for (F i = zero_F.getOne(); counter < prime; ++i) {
+        for (u32 counter = 1; counter < prime; ++counter) {
             // assert(dlog.find(i) != dlog.end() && "i not found");
-            cout << prefix << i << ") : " << coeff[dlog[counter].toSize()].get() << endl;
-            ++counter;
+            cout << prefix << counter << ") : " << coeff[mpz2ul(dlog[counter])].get() << endl;
         }
         cout << endl;
         return;
     } else {
-        u32 counter = 1;
-        for (F i = zero_F.getOne(); counter < prime; ++i) {
-            print_dlog(coeff[dlog[counter].toSize()], dlog, zero_F, prime, prefix + i.getX().get_str() + ", ");
-            ++counter;
+        for (u32 counter = 1; counter < prime; ++counter) {
+            print_dlog(coeff[mpz2ul(dlog[counter])], dlog, prime, prefix + to_string(counter) + ", ");
         }
         cout << endl;
         return;
