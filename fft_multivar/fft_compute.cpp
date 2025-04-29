@@ -29,16 +29,24 @@ void fft_multivar_wrapper(const Fint* w, nd_vector<Fint>& arr, const u32* rev, u
         temp_u.reshape(iter_temp_shape);
         temp_v.reshape(iter_temp_shape);
         if (dim_i == 1) {
+            # pragma omp parallel for
             for (size_t arr_i = 0; arr_i < iter_size; ++arr_i) {
+                Fint mul_counter_local = 0;
                 Fint& u = temp_u.get(arr_i);
                 Fint& v = temp_v.get(arr_i);
-                fft(w, arr[arr_i].ptr(), rev, logn, mul_counter, u, v);
+                fft(w, arr[arr_i].ptr(), rev, logn, mul_counter_local, u, v);
+                # pragma omp critical
+                mul_counter += mul_counter_local;
             }
         } else {
+            # pragma omp parallel for
             for (size_t arr_i = 0; arr_i < iter_size; ++arr_i) {
+                Fint mul_counter_local = 0;
                 nd_vector<Fint> u = temp_u[arr_i];
                 nd_vector<Fint> v = temp_v[arr_i];
-                fft_nd(w, arr[arr_i], rev, logn, mul_counter, u, v);
+                fft_nd(w, arr[arr_i], rev, logn, mul_counter_local, u, v);
+                # pragma omp critical
+                mul_counter += mul_counter_local;
             }
         }
     }
@@ -122,18 +130,26 @@ void fft_multivar_wrapper_NF(const Fint* w, nd_vector<Fint>& arr, const vector<u
         temp_v1.reshape(iter_temp_shape);
         temp_v2.reshape(iter_temp_shape);
         if (dim_i == 1) {
+            # pragma omp parallel for
             for (size_t arr_i = 0; arr_i < iter_size; ++arr_i) {
+                Fint mul_counter_local = 0;
                 Fint* u = temp_u[arr_i].ptr();
                 Fint& v1 = temp_v1.get(arr_i);
                 Fint& v2 = temp_v2.get(arr_i);
-                fft_NF(w, arr[arr_i].ptr(), radix_vec, dist, rev_rev, len, mul_counter, u, v1, v2);
+                fft_NF(w, arr[arr_i].ptr(), radix_vec, dist, rev_rev, len, mul_counter_local, u, v1, v2);
+                # pragma omp critical
+                mul_counter += mul_counter_local;
             }
         } else {
+            # pragma omp parallel for
             for (size_t arr_i = 0; arr_i < iter_size; ++arr_i) {
+                Fint mul_counter_local = 0;
                 nd_vector<Fint> u = temp_u[arr_i];
                 nd_vector<Fint> v1 = temp_v1[arr_i];
                 nd_vector<Fint> v2 = temp_v2[arr_i];
-                fft_nd_NF(w, arr[arr_i], radix_vec, dist, rev_rev, len, mul_counter, u, v1, v2);
+                fft_nd_NF(w, arr[arr_i], radix_vec, dist, rev_rev, len, mul_counter_local, u, v1, v2);
+                # pragma omp critical
+                mul_counter += mul_counter_local;
             }
         }
     }
@@ -174,10 +190,10 @@ void fft_NF(const Fint* w, Fint* const& arr, const vector<u32>& radix_vec, const
                     j_dist += dist[phase];
                     exp_diff += phase_num;
                 }
-                mpz_add_ui(mul_counter.get_mpz_t(), mul_counter.get_mpz_t(), radix * radix);
             }
             ++bi;
         }
+        mpz_add_ui(mul_counter.get_mpz_t(), mul_counter.get_mpz_t(), len / dist[phase - 1] * dist[phase] * radix * radix);
         mpz_add_ui(mul_counter.get_mpz_t(), mul_counter.get_mpz_t(), len / dist[phase - 1]);
     }
 }
@@ -221,10 +237,10 @@ void fft_nd_NF(const Fint* w, const nd_vector<Fint>& arr, const vector<u32>& rad
                     j_dist += dist[phase];
                     exp_diff += phase_num;
                 }
-                mpz_add_ui(mul_counter.get_mpz_t(), mul_counter.get_mpz_t(), radix * radix * temp_u[0].size());
             }
             ++bi;
         }
+        mpz_add_ui(mul_counter.get_mpz_t(), mul_counter.get_mpz_t(), len / dist[phase - 1] * dist[phase] * radix * radix * temp_u[0].size());
         mpz_add_ui(mul_counter.get_mpz_t(), mul_counter.get_mpz_t(), len / dist[phase - 1]);
     }
 }

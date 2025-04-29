@@ -5,7 +5,7 @@
 
 using namespace std;
 
-int main() {
+int main(int argc, char* argv[]) {
     vector<u32> degs_vec;
     vector<vector<Fint>> evaluation_points;
     vector<Fint> results;
@@ -20,6 +20,18 @@ int main() {
     cin >> print_rst;
     cout << "Verify result? (0/1): ";
     cin >> print_verify_rst;
+
+    EvalIO meta = {
+        {0, 0, 0}, // times
+        false, // print_time
+        false // debug
+    };
+    if (argc > 1) {
+        meta.print_time = atoi(argv[1]);
+    }
+    if (argc > 2) {
+        meta.debug = atoi(argv[2]);
+    }
     // initializing field and consts
     init_setup(modulo, degs_vec, total_len, m);
 
@@ -50,7 +62,7 @@ int main() {
     }
     auto start = chrono::high_resolution_clock::now();
     {
-        int result = evaluate_all_point(coeff, modulo, capital_M, mul_counter, evaluation_points, results);
+        int result = evaluate_all_point(coeff, modulo, capital_M, mul_counter, evaluation_points, results, meta);
         switch (result) {
             case 0:
                 cout << "Success!" << endl;
@@ -67,6 +79,11 @@ int main() {
     auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
 
     print_stats(mul_counter, duration);
+    if (meta.print_time) {
+        cout << "Time taken for precomputable: " << meta.times[0] << " μs" << endl
+        << "Time taken for memory cleaning: " << meta.times[1] << " μs" << endl
+        << "Time taken for FFT: " << meta.times[2] << " μs" << endl;
+    }
 
     if (print_rst) {
         cout << "\n===computation===" << endl;

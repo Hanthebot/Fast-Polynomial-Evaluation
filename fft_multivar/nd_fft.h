@@ -3,6 +3,7 @@
 
 #include "fft_multivar.h"
 #include <set>
+#include <omp.h>
 
 // fft_compute.cpp
 void fft_multivar_wrapper(const Fint* w, nd_vector<Fint>& arr, const u32* rev, u32 logn, Fint& mul_counter, Fint*& temp_u_vec, Fint*& temp_v_vec);

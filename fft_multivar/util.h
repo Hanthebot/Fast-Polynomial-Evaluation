@@ -24,5 +24,6 @@ void ul2mpz(Fint& mp, const u32& input);
 void ull2mpz(Fint& mp, const u64& input);
 void enforce_modulus(Fint& mp, const Fint& modulo);
 Fint multInverse(const Fint& m, const Fint& prime_mp, const Fint* dlog, const Fint* w);
+long long int accumulate_time(chrono::high_resolution_clock::time_point& start, chrono::high_resolution_clock::time_point& end, long long int& duration);
 
 #endif // UTIL_H

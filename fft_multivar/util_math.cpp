@@ -210,3 +210,10 @@ Fint multInverse(const Fint& m, const Fint& prime_mp, const Fint* dlog = nullptr
 
    return inverseModular(m, prime_mp);
 }
+
+long long int accumulate_time(chrono::high_resolution_clock::time_point& start, chrono::high_resolution_clock::time_point& end, long long int& duration) {
+    end = chrono::high_resolution_clock::now();
+    duration += chrono::duration_cast<chrono::microseconds>(end - start).count();
+    start = chrono::high_resolution_clock::now();
+    return duration;
+}

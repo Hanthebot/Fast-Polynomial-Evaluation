@@ -17,10 +17,14 @@ typedef unsigned int u32;
 typedef unsigned long long u64;
 typedef mpz_class Fint;
 
-// changed
-int evaluate_all_point(const nd_vector<Fint>& arr, const Fint& modulo, const Fint& capital_M, Fint& mul_counter, const vector<vector<Fint>>& points_to_evaluate, vector<Fint>& results);
-Fint evaluate_brutal(const nd_vector<Fint>& coeff, const vector<Fint>& points, Fint& mul_counter);
+struct EvalIO {
+    long long int times[3];
+    bool print_time;
+    bool debug;
+};
 
-const bool DEBUG = false;
+// changed
+int evaluate_all_point(const nd_vector<Fint>& arr, const Fint& modulo, const Fint& capital_M, Fint& mul_counter, const vector<vector<Fint>>& points_to_evaluate, vector<Fint>& results, EvalIO& meta);
+Fint evaluate_brutal(const nd_vector<Fint>& coeff, const vector<Fint>& points, Fint& mul_counter);
 
 #endif // FFT_MULTIVAR_H

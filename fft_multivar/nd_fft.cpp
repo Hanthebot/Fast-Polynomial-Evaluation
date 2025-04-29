@@ -2,10 +2,11 @@
 #include "nd_fft.h"
 #include "util.h"
 #include "field_data.h"
+#include <omp.h>
 
 using namespace std;
 
-int evaluate_all_point(const nd_vector<Fint>& arr, const Fint& modulo, const Fint& capital_M, Fint& mul_counter, const vector<vector<Fint>>& points_to_evaluate, vector<Fint>& results) {
+int evaluate_all_point(const nd_vector<Fint>& arr, const Fint& modulo, const Fint& capital_M, Fint& mul_counter, const vector<vector<Fint>>& points_to_evaluate, vector<Fint>& results, EvalIO& meta) {
     // figure out which fields to use
     u32 m = arr.getDim(), max_fft_field, field_signal;
     vector<bool> isFermat;
@@ -31,7 +32,9 @@ int evaluate_all_point(const nd_vector<Fint>& arr, const Fint& modulo, const Fin
     Fint* temp_v2_vec = new Fint[pow(max_fft_field - 1, m - 1)]; // temporary storage for value storage
     
     for (size_t i = 0; i < fields_used.size(); ++i) {
-        auto start = chrono::high_resolution_clock::now();
+        chrono::high_resolution_clock::time_point start = chrono::high_resolution_clock::now();
+        chrono::high_resolution_clock::time_point end;
+        long long int duration = 0;
         span<size_t> shape, units;
         u64 buf_size = pow(fields_used[i] - 1, m);
         
@@ -54,6 +57,7 @@ int evaluate_all_point(const nd_vector<Fint>& arr, const Fint& modulo, const Fin
                 FD[i].dist[dist_i] = FD[i].dist[dist_i - 1] / FD[i].radix_vec[dist_i - 1];
             }
         }
+        accumulate_time(start, end, meta.times[0]);
         
         // for ease of use
         Fint* w = FD[i].w.data();
@@ -65,6 +69,7 @@ int evaluate_all_point(const nd_vector<Fint>& arr, const Fint& modulo, const Fin
         
         coeff_s[i] = new nd_vector<Fint>(m, shape, units, coeff_data, buf_size);
         coeff_reduce(arr, coeff_s[i], FD[i].prime);
+        accumulate_time(start, end, meta.times[1]);
         if (isFermat[i]) {
             u32 local_logn = log2(FD[i].prime - 1);
             fft_multivar_wrapper(w, *coeff_s[i], FD[i].rev.data(), local_logn, 
@@ -83,9 +88,8 @@ int evaluate_all_point(const nd_vector<Fint>& arr, const Fint& modulo, const Fin
             enforce_modulus(elem.get(), FD[i].prime);
             point_evaluation[i][j] = elem.get();
         }
-        if (DEBUG) {
-            auto end = chrono::high_resolution_clock::now();
-            auto duration = chrono::duration_cast<chrono::microseconds>(end - start).count();
+        duration = accumulate_time(start, end, meta.times[2]);
+        if (meta.print_time) {
             cout << "Field " << fields_used[i] << " evaluated in " << duration << " μs" << endl;
         }
     }
@@ -105,7 +109,7 @@ int evaluate_all_point(const nd_vector<Fint>& arr, const Fint& modulo, const Fin
 
     results.reserve(points_to_evaluate.size());
     for (size_t j = 0; j < points_to_evaluate.size(); ++j) {
-        if (DEBUG) {
+        if (meta.debug) {
             cout << "(" << points_to_evaluate[j][0];
             for (size_t i = 1; i < points_to_evaluate[j].size(); ++i) {
                 cout << ", " << points_to_evaluate[j][i];
@@ -115,19 +119,19 @@ int evaluate_all_point(const nd_vector<Fint>& arr, const Fint& modulo, const Fin
         Fint temp = 0;
         for (size_t i = 0; i < fields_used.size(); ++i) {
             temp += interpolate[i] * point_evaluation[i][j];
-            if (DEBUG) {
+            if (meta.debug) {
                 cout << "\t" << fields_used[i] << ": " << point_evaluation[i][j];
                 Fint t = 0;
                 Fint brute = evaluate_brutal(arr, points_to_evaluate[j], t) % fields_used[i];
                 cout << ((point_evaluation[i][j] == brute) ? " == " : " != ") << brute << endl;
             }
         }
-        if (DEBUG) {
+        if (meta.debug) {
             cout << "\toverall: " << temp << " w/ mod " << common_prod;
         }
         temp %= common_prod;
         results.push_back(temp % modulo);
-        if (DEBUG) {
+        if (meta.debug) {
             cout << " with mod " << modulo << " => " << results.back() << endl;
         }
     }
