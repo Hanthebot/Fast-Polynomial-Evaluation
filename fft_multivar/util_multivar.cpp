@@ -85,14 +85,12 @@ void coeff_init(const nd_vector<Fint>& coeff, const u32& m, const vector<u32>& d
 
 void print_stats(Fint& mul_counter, microseconds duration) {
     cout << "\n===Result===\n";
-    mpf_class speed, counter;
-
-    mpf_set_si(speed.get_mpf_t(), duration.count());
-    mpf_set_si(counter.get_mpf_t(), mul_counter.get_si());
+    mpf_class speed = ill2mpf(duration.count());
+    mpf_class counter = ill2mpf(mul_counter.get_ui());
     if (counter == 0) counter = 1;
     speed /= counter;
-
-    cout << "It took " << duration.count() << " μs" << endl;
+    
+    cout << "It took " << from_micro(duration.count()) << " s" << endl;
     cout << "Multiplication counter: " << mul_counter << endl;
     cout << "Speed: " << speed << " s/M mult" << endl;
 }

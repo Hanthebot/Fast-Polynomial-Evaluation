@@ -21,11 +21,7 @@ int main(int argc, char* argv[]) {
     cout << "Verify result? (0/1): ";
     cin >> print_verify_rst;
 
-    EvalIO meta = {
-        {0, 0, 0}, // times
-        false, // print_time
-        false // debug
-    };
+    EvalIO meta;
     if (argc > 1) {
         meta.print_time = atoi(argv[1]);
     }
@@ -80,12 +76,15 @@ int main(int argc, char* argv[]) {
 
     print_stats(mul_counter, duration);
     if (meta.print_time) {
-        cout << "Time taken for precomputable: " << meta.times[0] << " μs" << endl
-        << "Time taken for memory cleaning: " << meta.times[1] << " μs" << endl
-        << "Time taken for FFT: " << meta.times[2] << " μs" << endl;
+        cout << "Time taken for precomputable: " << from_micro(meta.times.precomp) << " s" << endl
+        << "Time taken for memory cleaning: " << from_micro(meta.times.mem_clean) << " s" << endl
+        << "Time taken for FFT: " << from_micro(meta.times.fft) << " s" << endl
+        << "Time taken for retrieval: " << from_micro(meta.times.retrieval) << " s" << endl
+        << "Time taken for CRT: " << from_micro(meta.times.crt) << " s" << endl;
     }
 
     if (print_rst) {
+        long long int naive_time = 0;
         cout << "\n===computation===" << endl;
         for (size_t i = 0; i < results.size(); ++i) {
             // mul_counter: doesn't matter anymore
@@ -95,7 +94,9 @@ int main(int argc, char* argv[]) {
             }
             cout << ") = " << results[i] << " ";
             if (print_verify_rst) {
+                start = chrono::high_resolution_clock::now();
                 Fint brute_eval = evaluate_brutal(coeff, evaluation_points[i], mul_counter) % modulo;
+                accumulate_time(start, stop, naive_time);
                 if (results[i] != brute_eval) {
                     cout << "!= " << brute_eval;
                 } else {
@@ -104,6 +105,12 @@ int main(int argc, char* argv[]) {
             }
             cout << endl;
         }
+        mpf_class time_spent = from_micro(naive_time);
+        double res_size = (double) results.size();
+        if (res_size > 0) {
+            time_spent /= res_size;
+        }
+        cout << "Time taken for naive: " << time_spent << " s" << endl;
     }
 
     return 0;

@@ -22,6 +22,8 @@ u32 mpz2ul(const Fint& mp);
 u64 mpz2ull(const Fint& mp);
 void ul2mpz(Fint& mp, const u32& input);
 void ull2mpz(Fint& mp, const u64& input);
+mpf_class ill2mpf(const long long int& num);
+mpf_class from_micro(const long long int& num);
 void enforce_modulus(Fint& mp, const Fint& modulo);
 Fint multInverse(const Fint& m, const Fint& prime_mp, const Fint* dlog, const Fint* w);
 long long int accumulate_time(chrono::high_resolution_clock::time_point& start, chrono::high_resolution_clock::time_point& end, long long int& duration);

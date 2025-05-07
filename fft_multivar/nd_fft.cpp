@@ -22,7 +22,7 @@ int evaluate_all_point(const nd_vector<Fint>& arr, const Fint& modulo, const Fin
     FieldData* FD = new FieldData[fields_used.size()]; // field data
     
     Fint** point_evaluation = new Fint*[fields_used.size()];
-    Fint* coeff_data = new Fint[pow(max_fft_field - 1, m)]; // for reduced coefficients
+    Fint** coeff_data_s = new Fint*[fields_used.size()]; // for reduced coefficients
     nd_vector<Fint>** coeff_s = new nd_vector<Fint>*[fields_used.size()];
     vector<size_t>* shape_vec_s = new vector<size_t>[fields_used.size()];
     vector<size_t>* unit_vec_s = new vector<size_t>[fields_used.size()];
@@ -31,10 +31,10 @@ int evaluate_all_point(const nd_vector<Fint>& arr, const Fint& modulo, const Fin
     Fint* temp_v1_vec = new Fint[pow(max_fft_field - 1, m - 1)]; // temporary storage for value storage
     Fint* temp_v2_vec = new Fint[pow(max_fft_field - 1, m - 1)]; // temporary storage for value storage
     
+    chrono::high_resolution_clock::time_point start, end;
+    long long int duration = 0;
     for (size_t i = 0; i < fields_used.size(); ++i) {
-        chrono::high_resolution_clock::time_point start = chrono::high_resolution_clock::now();
-        chrono::high_resolution_clock::time_point end;
-        long long int duration = 0;
+        start = chrono::high_resolution_clock::now();
         span<size_t> shape, units;
         u64 buf_size = pow(fields_used[i] - 1, m);
         
@@ -57,19 +57,20 @@ int evaluate_all_point(const nd_vector<Fint>& arr, const Fint& modulo, const Fin
                 FD[i].dist[dist_i] = FD[i].dist[dist_i - 1] / FD[i].radix_vec[dist_i - 1];
             }
         }
-        accumulate_time(start, end, meta.times[0]);
+        accumulate_time(start, end, meta.times.precomp);
         
         // for ease of use
         Fint* w = FD[i].w.data();
-        Fint* dlog = FD[i].dlog.data();
         point_evaluation[i] = new Fint[points_to_evaluate.size()];
         construct_nd_vector_helper(shape_vec_s[i], shape, unit_vec_s[i], units, m, FD[i].prime);
         
+        coeff_data_s[i] = new Fint[pow(max_fft_field - 1, m)];
+        Fint* coeff_data = coeff_data_s[i];
         init_coeff_field(coeff_data, arr.getDim(), buf_size);
         
         coeff_s[i] = new nd_vector<Fint>(m, shape, units, coeff_data, buf_size);
         coeff_reduce(arr, coeff_s[i], FD[i].prime);
-        accumulate_time(start, end, meta.times[1]);
+        accumulate_time(start, end, meta.times.mem_clean);
         if (isFermat[i]) {
             u32 local_logn = log2(FD[i].prime - 1);
             fft_multivar_wrapper(w, *coeff_s[i], FD[i].rev.data(), local_logn, 
@@ -78,6 +79,14 @@ int evaluate_all_point(const nd_vector<Fint>& arr, const Fint& modulo, const Fin
             fft_multivar_wrapper_NF(w, *coeff_s[i], FD[i].radix_vec, FD[i].dist, FD[i].rev_rev.data(),
             mul_counter, temp_u_vec, temp_v1_vec, temp_v2_vec);
         }
+        duration = accumulate_time(start, end, meta.times.fft);
+        if (meta.print_time) {
+            cout << "Field " << fields_used[i] << " evaluated in " << duration << " μs" << endl;
+        }
+    }
+    for (size_t i = 0; i < fields_used.size(); ++i) {
+        start = chrono::high_resolution_clock::now();
+        Fint* dlog = FD[i].dlog.data();
         for (size_t j = 0; j < points_to_evaluate.size(); ++j) {
             nd_vector<Fint> elem = *coeff_s[i];
             for (const Fint& coord : points_to_evaluate[j]) {
@@ -88,13 +97,11 @@ int evaluate_all_point(const nd_vector<Fint>& arr, const Fint& modulo, const Fin
             enforce_modulus(elem.get(), FD[i].prime);
             point_evaluation[i][j] = elem.get();
         }
-        duration = accumulate_time(start, end, meta.times[2]);
-        if (meta.print_time) {
-            cout << "Field " << fields_used[i] << " evaluated in " << duration << " μs" << endl;
-        }
+        accumulate_time(start, end, meta.times.retrieval);
     }
     
     // reconstruct the solution using Chinese remainder theorem
+    start = chrono::high_resolution_clock::now();
     vector<Fint> interpolate(fields_used.size(), Fint(0));
     Fint common_prod = 1;
     for (size_t i = 0; i < fields_used.size(); ++i) {
@@ -135,6 +142,7 @@ int evaluate_all_point(const nd_vector<Fint>& arr, const Fint& modulo, const Fin
             cout << " with mod " << modulo << " => " << results.back() << endl;
         }
     }
+    accumulate_time(start, end, meta.times.crt);
 
     return (fields_used.size() == 1 && isFermat[0]) ? 1 : 0; // success
 }

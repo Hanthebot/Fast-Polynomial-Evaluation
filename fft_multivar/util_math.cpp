@@ -175,6 +175,18 @@ void ull2mpz(Fint& mp, const u64& input) {
     mpz_import(mp.get_mpz_t(), 1, -1, sizeof(u64), 0, 0, &input);
 }
 
+mpf_class ill2mpf(const long long int& num) {
+    mpf_class mpf;
+    mpf_set_si(mpf.get_mpf_t(), num);
+    return mpf;
+}
+
+mpf_class from_micro(const long long int& num) {
+    mpf_class mpf = ill2mpf(num);
+    mpf /= 1000000;
+    return mpf;
+}
+
 void enforce_modulus(Fint& mp, const Fint& modulo) {
     if (mp >= modulo)
        mp %= modulo;

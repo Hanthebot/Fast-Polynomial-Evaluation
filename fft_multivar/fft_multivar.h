@@ -17,10 +17,18 @@ typedef unsigned int u32;
 typedef unsigned long long u64;
 typedef mpz_class Fint;
 
+struct TimeRecord {
+    long long int precomp = 0;
+    long long int mem_clean = 0;
+    long long int fft = 0;
+    long long int retrieval = 0;
+    long long int crt = 0;
+};
+
 struct EvalIO {
-    long long int times[3];
-    bool print_time;
-    bool debug;
+    TimeRecord times;
+    bool print_time = false;
+    bool debug = false;
 };
 
 // changed
