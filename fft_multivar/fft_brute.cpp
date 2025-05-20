@@ -2,7 +2,7 @@
 
 Fint evaluate_nd(const nd_vector<Fint>& arr, const span<const Fint>& points, Fint& mul_counter) {
     if (arr.getDim() == 0) {
-        return arr.get();
+        return 1; // arr.get();
     }
     Fint result = 0;
     for (size_t i = arr.getShape()[0] - 1; ; --i) {

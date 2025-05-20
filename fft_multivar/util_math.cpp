@@ -107,8 +107,7 @@ Fint pow(Fint base, Fint exp) {
     return result;
 }
 
-void compute_M(Fint& capital_M, const vector<u32>& degs_vec, const Fint& modulo, 
-    const u64& total_len, const u32& m) {
+void compute_M(Fint& capital_M, const span<u32>& degs_vec, const Fint& modulo) {
     /*
         we modify the original article's structure 
         to find a lower upper bound of M
@@ -122,14 +121,18 @@ void compute_M(Fint& capital_M, const vector<u32>& degs_vec, const Fint& modulo,
     u64 fint_temp = 1ULL << 32;
     Fint UL_BOUND, mul_temp;
     mpz_set_ui(UL_BOUND.get_mpz_t(), fint_temp);
-    for (size_t i = 0; i < m; ++i) {
-        sum_degs += degs_vec[i];
+    for (const u32& deg: degs_vec) {
+        sum_degs += deg;
     }
     sum_degs += 1;
     if (sum_degs < UL_BOUND) {
         mpz_pow_ui(capital_M.get_mpz_t(), modulo_max.get_mpz_t(), sum_degs.get_ui());
     } else {
         capital_M = pow(modulo_max, sum_degs);
+    }
+    u64 total_len = 1;
+    for (const u32& deg: degs_vec) {
+        total_len *= (deg + 1);
     }
     mpz_set_ui(mul_temp.get_mpz_t(), total_len);
     capital_M *= mul_temp;

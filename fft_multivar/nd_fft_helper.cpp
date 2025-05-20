@@ -61,14 +61,11 @@ u32 find_fields(const Fint& modulo, const Fint& capital_M, vector<u32>& fields_u
     }
     
     max_fft_field = 1;
-    cout << "fields used: ";
     for (const auto& field : fields_used) {
-        cout << field << " ";
         if (field > max_fft_field) {
             max_fft_field = field;
         }
     }
-    cout << endl;
     return 0;
 }
 

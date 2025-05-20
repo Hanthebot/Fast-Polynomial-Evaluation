@@ -1,7 +1,9 @@
 #include <iostream>
+#include <fstream>
 #include <cmath>
 #include "fft_multivar.h"
 #include "util.h"
+#include "crt_data.h"
 
 using namespace std;
 
@@ -10,108 +12,93 @@ int main(int argc, char* argv[]) {
     vector<vector<Fint>> evaluation_points;
     vector<Fint> results;
     Fint mul_counter = 0, modulo = 0, capital_M;
-    u64 total_len;
-    u32 m;
-    
-    bool print_coeff, print_rst, print_verify_rst;
-    cout << "Print coefficients? (0/1): ";
-    cin >> print_coeff;
-    cout << "Print result? (0/1): ";
-    cin >> print_rst;
-    cout << "Verify result? (0/1): ";
-    cin >> print_verify_rst;
 
-    EvalIO meta;
-    if (argc > 1) {
-        meta.print_time = atoi(argv[1]);
-    }
-    if (argc > 2) {
-        meta.debug = atoi(argv[2]);
-    }
     // initializing field and consts
-    init_setup(modulo, degs_vec, total_len, m);
-
-    compute_M(capital_M, degs_vec, modulo, total_len, m);
-    // Field my_field = init_setup(logn, len, m, prime);
-    // zero_F.setField(&my_field);
-    init_evaluation_points(evaluation_points, m, modulo);
-
-    // receiving coefficients
-    vector<size_t> shape_vec(m, 0);
-    for (size_t i = 0; i < m; ++i) {
-        shape_vec[i] = degs_vec[i] + 1;
-    }
-    span<size_t> shape{shape_vec};
-    vector<size_t> units_vec(m, 1);
-    units_vec[m - 1] = 1;
-    for (int i = m - 2; i >= 0; --i) {
-        units_vec[i] = units_vec[i + 1] * shape_vec[i + 1];
-    }
-    span<size_t> units{units_vec};
-    Fint* vec_data = new Fint[total_len];
-    nd_vector<Fint> coeff {m, shape, units, vec_data, total_len};
-
-    coeff_init(coeff, m, degs_vec, modulo);
-    
-    if (print_coeff) {
-        cout << "===coeff===\n" << coeff << endl;
-    }
-    auto start = chrono::high_resolution_clock::now();
-    {
-        int result = evaluate_all_point(coeff, modulo, capital_M, mul_counter, evaluation_points, results, meta);
-        switch (result) {
-            case 0:
-                cout << "Success!" << endl;
-                break;
-            case 1:
-                cout << "Success with Fermat prime!" << endl;
-                break;
-            case 2:
-                cout << "Failure: non-32-bit prime not supported yet!" << endl;
-                break;
+    modulo = 4093;
+    std::ostream& my_cout = std::cout;
+    for (u32 m = 3; m <= 8; ++m) {
+        u32 add_ind = 0;
+        u32 eg_count = 1;
+        degs_vec.clear();
+        degs_vec = vector<u32>(m, 1);
+        u64 total_len = 1;
+        for (size_t i = 0; i < m; ++i) {
+            total_len *= degs_vec[i] + 1;
         }
-    }
-    auto stop = chrono::high_resolution_clock::now();
-    auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
-
-    print_stats(mul_counter, duration);
-    if (meta.print_time) {
-        cout << "Time taken for precomputable: " << from_micro(meta.times.precomp) << " s" << endl
-        << "Time taken for memory cleaning: " << from_micro(meta.times.mem_clean) << " s" << endl
-        << "Time taken for FFT: " << from_micro(meta.times.fft) << " s" << endl
-        << "Time taken for retrieval: " << from_micro(meta.times.retrieval) << " s" << endl
-        << "Time taken for CRT: " << from_micro(meta.times.crt) << " s" << endl;
-    }
-
-    if (print_rst) {
-        long long int naive_time = 0;
-        cout << "\n===computation===" << endl;
-        for (size_t i = 0; i < results.size(); ++i) {
-            // mul_counter: doesn't matter anymore
-            cout << "f(" << evaluation_points[i][0];
-            for (size_t j = 1; j < m; ++j) {
-                cout << ", " << evaluation_points[i][j];
-            }
-            cout << ") = " << results[i] << " ";
-            if (print_verify_rst) {
-                start = chrono::high_resolution_clock::now();
-                Fint brute_eval = evaluate_brutal(coeff, evaluation_points[i], mul_counter) % modulo;
-                accumulate_time(start, stop, naive_time);
-                if (results[i] != brute_eval) {
-                    cout << "!= " << brute_eval;
-                } else {
-                    cout << "== " << brute_eval;
+        my_cout << "===m: " << m << "===" << endl;
+        while (total_len < 5000000) {
+            if (total_len >= 10000) {
+                eg_count += 1;
+                // Forward output after this line to a file stream
+                string output_name = "multivar_sample/output_";
+                for (size_t i = 0; i < m; ++i) {
+                    output_name += to_string(degs_vec[i]);
+                    if (i != m - 1) {
+                        output_name += "_";
+                    }
                 }
-            }
-            cout << endl;
-        }
-        mpf_class time_spent = from_micro(naive_time);
-        double res_size = (double) results.size();
-        if (res_size > 0) {
-            time_spent /= res_size;
-        }
-        cout << "Time taken for naive: " << time_spent << " s" << endl;
-    }
+                output_name += ".txt";
+                ofstream outfile(output_name);
+                compute_M(capital_M, degs_vec, modulo);
+                init_evaluation_points(evaluation_points, m, modulo, outfile);
+    
+                // receiving coefficients
+                vector<size_t> shape_vec(m, 0);
+                for (size_t i = 0; i < m; ++i) {
+                    shape_vec[i] = degs_vec[i] + 1;
+                }
+                span<size_t> shape{shape_vec};
+                vector<size_t> units_vec(m, 1);
+                units_vec[m - 1] = 1;
+                for (int i = m - 2; i >= 0; --i) {
+                    units_vec[i] = units_vec[i + 1] * shape_vec[i + 1];
+                }
+                span<size_t> units{units_vec};
+                nd_vector<Fint> coeff {m, shape, units, nullptr, total_len};
+    
+                coeff_init(coeff, m, degs_vec, modulo, outfile);
+                
+                outfile << "Terms: " << total_len << endl;
+                CRTData CRT(coeff, mpz2ul(modulo));
+                outfile << "Table count: " << CRT.getTableCount() << endl
+                << "Table size: " << CRT.getTableSize() << endl;
 
+                Fint mul_count = 0, access_count = 0;
+                CRT.evaluate_stats(mul_count, access_count);
+                outfile << "Multiplication count: " << mul_count << endl;
+                outfile << "Access count: " << access_count << endl;
+                
+                auto start = chrono::high_resolution_clock::now();
+                for (const auto& evaluation_point : evaluation_points) {
+                    CRT.evaluate(evaluation_point);
+                }
+                auto stop = chrono::high_resolution_clock::now();
+                auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
+                mpf_class time_spent_fft = from_micro(duration.count());
+                outfile << "Time taken for FFT: " << (time_spent_fft / (double) evaluation_points.size()) << " s" << endl;
+    
+                start = chrono::high_resolution_clock::now();
+                for (size_t i = 0; i < evaluation_points.size(); ++i) {
+                    evaluate_brutal(coeff, evaluation_points[i], mul_counter) % modulo;
+                }
+                stop = chrono::high_resolution_clock::now();
+                long long int naive_time = chrono::duration_cast<chrono::microseconds>(stop - start).count();
+                mpf_class time_spent = from_micro(naive_time);
+                if (evaluation_points.size() > 0) {
+                    time_spent /= (double) evaluation_points.size();
+                }
+                outfile << "Time taken for naive: " << time_spent << " s" << endl;
+                outfile.close();
+                my_cout << "eg_count: " << eg_count << "\r";
+            }
+            ++degs_vec[add_ind];
+            add_ind = (add_ind + 1) % m;
+            total_len = 1;
+            for (size_t i = 0; i < m; ++i) {
+                total_len *= degs_vec[i] + 1;
+            }
+        }
+        my_cout << endl;
+    }
     return 0;
 }

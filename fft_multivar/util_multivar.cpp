@@ -24,16 +24,18 @@ void init_setup(Fint& modulo, vector<u32>& degs_vec, u64& total_len, u32& m) {
     }
 }
 
-void init_evaluation_points(vector<vector<Fint>>& evaluation_points, const u32& m, const Fint& modulo) {
-    cout << "Enter number of evaluation points: " << endl;
-    int num_points;
-    cin >> num_points;
+void init_evaluation_points(vector<vector<Fint>>& evaluation_points, const u32& m, const Fint& modulo, ostream& outfile) {
+    outfile << "Enter number of evaluation points: " << endl;
+    int num_points = 32;
+    // cin >> num_points;
+    evaluation_points.clear();
     evaluation_points.resize(num_points, vector<Fint>(m, 0));
-    cout << "Enter evaluation points: " << endl;
+    outfile << "Enter evaluation points: " << endl;
     for (int i = 0; i < num_points; ++i) {
         for (size_t j = 0; j < m; ++j) {
             while (evaluation_points[i][j] <= 0 || evaluation_points[i][j] >= modulo) {
-                cin >> evaluation_points[i][j];
+                // cin >> evaluation_points[i][j];
+                evaluation_points[i][j] = rand() % modulo;
             }
         }
     }
@@ -73,14 +75,14 @@ void recur_input(const nd_vector<Fint>& coeff, const span<const u32>& degs, cons
     }
 }
 
-void coeff_init(const nd_vector<Fint>& coeff, const u32& m, const vector<u32>& degs_vec, const Fint& modulo) {
-    cout << "Enter coefficients for <" << degs_vec[0];
+void coeff_init(const nd_vector<Fint>& coeff, const u32& m, const vector<u32>& degs_vec, const Fint& modulo, ostream& outfile) {
+    outfile << "Enter coefficients for <" << degs_vec[0];
     for (u32 i = 1; i < degs_vec.size(); ++i)
-        cout << ", " << degs_vec[i];
-    cout << "> degree polynomial, from degree 0: " << endl;
+        outfile << ", " << degs_vec[i];
+    outfile << "> degree polynomial, from degree 0: " << endl;
     span<const u32> degs = degs_vec; // to preserve const-ness
-    cout << "modulo: " << modulo << endl;
-    recur_input(coeff, degs, modulo);
+    outfile << "modulo: " << modulo << endl;
+    // recur_input(coeff, degs, modulo);
 }
 
 void print_stats(Fint& mul_counter, microseconds duration) {
