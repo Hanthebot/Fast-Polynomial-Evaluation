@@ -15,7 +15,7 @@ void factorize(Fint n, vector<u32>& factors);
 bool getRootOfUnity(const Fint& modulus, const u32& prime, Fint& prim_root);
 u64 pow(u64 base, u32 exp);
 Fint pow(Fint base, Fint exp);
-void compute_M(Fint& capital_M, const vector<u32>& degs_vec, const Fint& modulo, const u64& total_len, const u32& m);
+void compute_M(Fint& capital_M, const span<u32>& degs_vec, const Fint& modulo);
 bool is_Fermat_prime(const Fint& prime);
 u32 log2(u64 len);
 u32 mpz2ul(const Fint& mp);

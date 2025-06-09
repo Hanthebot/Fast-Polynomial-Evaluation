@@ -10,38 +10,25 @@ void compute_point_sets(const vector<vector<Fint>>& points_to_evaluate, set<Fint
     }
 }
 
-bool verify_compatible(const Fint& prime, const set<Fint>& val_set, const Fint& modulo) {
-    Fint temp = prime;
-    while (temp < modulo) {
-        if (val_set.find(temp) != val_set.end()) {
-            return false;
-        }
-        temp += prime;
-    }
-    return true;
-}
-
 void compute_prime_upper_bound(const Fint& capital_M, vector<u32>& fields_used, 
-    vector<bool>& isFermat, const set<Fint>& val_set, const Fint& modulo) {
+    vector<bool>& isFermat, const Fint& modulo) {
     // 16 log_2 (capital_M) is a rough upper bound of prime
     Fint temp = 1; // reset temp, now for product of primes
     Fint prime = 3; // finite field with prime 2: with only 1 element, meaningless
     while (temp < capital_M) {
-        if (verify_compatible(prime, val_set, modulo)) {
-            temp *= prime;
-            isFermat.push_back(is_Fermat_prime(prime));
-            fields_used.push_back(mpz_get_ui(prime.get_mpz_t()));
-        }
+        temp *= prime;
+        isFermat.push_back(is_Fermat_prime(prime));
+        fields_used.push_back(mpz_get_ui(prime.get_mpz_t()));
         mpz_nextprime(prime.get_mpz_t(), prime.get_mpz_t());
     }
 }
 
 u32 find_fields(const Fint& modulo, const Fint& capital_M, vector<u32>& fields_used, vector<bool>& isFermat, 
-    u32& max_fft_field, const set<Fint>& val_set) {
+    u32& max_fft_field) {
     isFermat.clear();
     fields_used.clear();
 
-    compute_prime_upper_bound(capital_M, fields_used, isFermat, val_set, modulo);
+    compute_prime_upper_bound(capital_M, fields_used, isFermat, modulo);
     
     if (fields_used.size() == 0) {
         // impossible case
@@ -61,14 +48,11 @@ u32 find_fields(const Fint& modulo, const Fint& capital_M, vector<u32>& fields_u
     }
     
     max_fft_field = 1;
-    cout << "fields used: ";
     for (const auto& field : fields_used) {
-        cout << field << " ";
         if (field > max_fft_field) {
             max_fft_field = field;
         }
     }
-    cout << endl;
     return 0;
 }
 

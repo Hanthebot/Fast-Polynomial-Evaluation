@@ -11,10 +11,9 @@ int evaluate_all_point(const nd_vector<Fint>& arr, const Fint& modulo, const Fin
     u32 m = arr.getDim(), max_fft_field, field_signal;
     vector<bool> isFermat;
     vector<u32> fields_used;
-    set<Fint> val_set;
-    compute_point_sets(points_to_evaluate, val_set);
+    compute_point_sets(points_to_evaluate);
     
-    if ((field_signal = find_fields(modulo, capital_M, fields_used, isFermat, max_fft_field, val_set))) {
+    if ((field_signal = find_fields(modulo, capital_M, fields_used, isFermat, max_fft_field))) {
         cout << "Error: from finding fields " << field_signal << endl;
         return 2;
     }
