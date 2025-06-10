@@ -2,14 +2,6 @@
 #include "nd_fft.h"
 #include "util.h"
 
-void compute_point_sets(const vector<vector<Fint>>& points_to_evaluate, set<Fint>& val_set) {
-    for (const auto& point : points_to_evaluate) {
-        for (const auto& coord : point) {
-            val_set.insert(coord);
-        }
-    }
-}
-
 void compute_prime_upper_bound(const Fint& capital_M, vector<u32>& fields_used, 
     vector<bool>& isFermat, const Fint& modulo) {
     // 16 log_2 (capital_M) is a rough upper bound of prime
@@ -59,7 +51,7 @@ u32 find_fields(const Fint& modulo, const Fint& capital_M, vector<u32>& fields_u
 void construct_nd_vector_helper(vector<size_t>& shape_vec, span<size_t>& shape, 
     vector<size_t>& unit_vec, span<size_t>& units, const u32& m, const u64& prime){
     shape_vec.clear(); unit_vec.clear();
-    shape_vec.resize(m, prime - 1);
+    shape_vec.resize(m, prime);
     unit_vec.resize(m, 1);
     for (int i = m - 2; i >= 0; --i) {
         unit_vec[i] = unit_vec[i + 1] * shape_vec[i + 1];
@@ -73,17 +65,69 @@ void init_coeff_field(Fint*& coeff_data, const u32& m, const u64& buf_size) {
         coeff_data[j] = 0;
 }
 
-void coeff_reduce_recur(const nd_vector<Fint>& arr, const nd_vector<Fint>& coeff, const u32& mod) {
+void coeff_reduce_recur(const nd_vector<Fint>& arr, const nd_vector<Fint>& coeff, const u32& mod);
+void coeff_reduce_recur_pre(const nd_vector<Fint>& arr, const nd_vector<Fint>& coeff, const u32& mod);
+void coeff_reduce_recur_post(const nd_vector<Fint>& arr, const nd_vector<Fint>& coeff, const u32& mod);
+
+void coeff_reduce_recur_pre(const nd_vector<Fint>& arr, const nd_vector<Fint>& coeff, const u32& mod) {
     if (arr.getDim() == 0) {
         *(coeff.ptr()) += arr.get();
+        return;
     }
+    size_t min_m = min(arr.getShape()[0], (size_t) mod);
     if (arr.getDim() == 1) {
-        for (size_t i = 0; i < arr.getShape()[0]; ++i) {
+        for (size_t i = 0; i < min_m; ++i) {
+            *(coeff.ptr()+i) += arr.get(i);
+        }
+        *(coeff.ptr()+mod) = coeff.get();
+        return;
+    }
+    for (size_t i = 0; i < min_m; ++i) {
+        coeff_reduce_recur_pre(arr[i], coeff[i % mod], mod);
+    }
+    coeff[mod].set_range(coeff[0]);
+}
+
+
+void coeff_reduce_recur_post(const nd_vector<Fint>& arr, const nd_vector<Fint>& coeff, const u32& mod) {
+    if (arr.getDim() == 0) {
+        *(coeff.ptr()) += arr.get();
+        return;
+    }
+    size_t min_m = min(arr.getShape()[0], (size_t) mod);
+    if (arr.getDim() == 1) {
+        for (size_t i = min_m; i < arr.getShape()[0]; ++i) {
             *(coeff.ptr()+(i % mod)) += arr.get(i);
         }
         return;
     }
-    for (size_t i = 0; i < arr.getShape()[0]; ++i) {
+    for (size_t i = 0; i < min_m; ++i) {
+        coeff_reduce_recur_post(arr[i], coeff[i % mod], mod);
+    }
+    for (size_t i = min_m; i < arr.getShape()[0]; ++i) {
+        coeff_reduce_recur(arr[i], coeff[i % mod], mod);
+    }
+}
+
+// code could be optimized, but for now, it is simple and clear
+// coeff_reduce_recur_pre and coeff_reduce_recur_post are used to reduce coefficients before and after copying constant term (= evaluation at 0)
+void coeff_reduce_recur(const nd_vector<Fint>& arr, const nd_vector<Fint>& coeff, const u32& mod) {
+    if (arr.getDim() == 0) {
+        *(coeff.ptr()) += arr.get();
+        return;
+    }
+    if (arr.getDim() == 1) {
+        *(coeff.ptr()) += arr.get();
+        *(coeff.ptr()+mod) = coeff.get();
+        for (size_t i = 1; i < arr.getShape()[0]; ++i) {
+            *(coeff.ptr()+(i % mod)) += arr.get(i);
+        }
+        return;
+    }
+    coeff_reduce_recur_pre(arr[0], coeff[0], mod);
+    coeff[mod].set_range(coeff[0]);
+    coeff_reduce_recur_post(arr[0], coeff[0], mod);
+    for (size_t i = 1; i < arr.getShape()[0]; ++i) {
         coeff_reduce_recur(arr[i], coeff[i % mod], mod);
     }
 }
@@ -92,19 +136,13 @@ void coeff_reduce(const nd_vector<Fint>& arr, nd_vector<Fint>*& coeff, const u32
     // reduce coefficients into field
     Fint prime_mp;
     ul2mpz(prime_mp, prime);
-    coeff_reduce_recur(arr, *coeff, prime - 1); // for modulus
+    coeff_reduce_recur(arr, *coeff, prime - 1);
+    cout << "Reduced coefficients to field of prime " << prime << endl;
+    cout << *coeff << endl;
     Fint* coeff_data = coeff->ptr();
-    Fint temp;
     for (size_t i = 0; i < coeff->size(); ++i) {
         // execute modulus only once per element
-        if (coeff_data[i] >= prime_mp) {
-            coeff_data[i] %= prime_mp;
-        } else if (coeff_data[i] < 0) {
-            while (coeff_data[i] < 0) {
-                coeff_data[i] += prime_mp;
-            }
-        }
-        // enforce_modulus(coeff_data[i], prime_mp);
+        enforce_modulus(coeff_data[i], prime_mp);
     }
 }
 

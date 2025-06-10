@@ -32,9 +32,8 @@ void init_evaluation_points(vector<vector<Fint>>& evaluation_points, const u32& 
     cout << "Enter evaluation points: " << endl;
     for (int i = 0; i < num_points; ++i) {
         for (size_t j = 0; j < m; ++j) {
-            while (evaluation_points[i][j] <= 0 || evaluation_points[i][j] >= modulo) {
-                cin >> evaluation_points[i][j];
-            }
+            cin >> evaluation_points[i][j];
+            enforce_modulus(evaluation_points[i][j], modulo);
         }
     }
 }

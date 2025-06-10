@@ -11,7 +11,6 @@ int evaluate_all_point(const nd_vector<Fint>& arr, const Fint& modulo, const Fin
     u32 m = arr.getDim(), max_fft_field, field_signal;
     vector<bool> isFermat;
     vector<u32> fields_used;
-    compute_point_sets(points_to_evaluate);
     
     if ((field_signal = find_fields(modulo, capital_M, fields_used, isFermat, max_fft_field))) {
         cout << "Error: from finding fields " << field_signal << endl;
@@ -26,16 +25,16 @@ int evaluate_all_point(const nd_vector<Fint>& arr, const Fint& modulo, const Fin
     vector<size_t>* shape_vec_s = new vector<size_t>[fields_used.size()];
     vector<size_t>* unit_vec_s = new vector<size_t>[fields_used.size()];
     
-    Fint* temp_u_vec = new Fint[pow(max_fft_field - 1, m)]; // temporary storage for FFT
-    Fint* temp_v1_vec = new Fint[pow(max_fft_field - 1, m - 1)]; // temporary storage for value storage
-    Fint* temp_v2_vec = new Fint[pow(max_fft_field - 1, m - 1)]; // temporary storage for value storage
+    Fint* temp_u_vec = new Fint[pow(max_fft_field, m)]; // temporary storage for FFT
+    Fint* temp_v1_vec = new Fint[pow(max_fft_field, m - 1)]; // temporary storage for value storage
+    Fint* temp_v2_vec = new Fint[pow(max_fft_field, m - 1)]; // temporary storage for value storage
     
     chrono::high_resolution_clock::time_point start, end;
     long long int duration = 0;
     for (size_t i = 0; i < fields_used.size(); ++i) {
         start = chrono::high_resolution_clock::now();
         span<size_t> shape, units;
-        u64 buf_size = pow(fields_used[i] - 1, m);
+        u64 buf_size = pow(fields_used[i], m);
         
         FD[i].prime = fields_used[i];
         ul2mpz(FD[i].prime_mp, fields_used[i]);
@@ -44,8 +43,7 @@ int evaluate_all_point(const nd_vector<Fint>& arr, const Fint& modulo, const Fin
             cout << "Error: root of unity not found for field " << fields_used[i] << endl;
             return 2;
         }
-        rou_init(FD[i].w, FD[i].dlog, FD[i].prime, FD[i].prime_mp, FD[i].rou);
-        
+        rou_init(FD[i].w, FD[i].dlog, FD[i].prime, FD[i].prime_mp, FD[i].rou); 
         if (isFermat[i]) {
             rev_init(FD[i].rev, log2(FD[i].prime - 1));
         } else {
@@ -63,7 +61,7 @@ int evaluate_all_point(const nd_vector<Fint>& arr, const Fint& modulo, const Fin
         point_evaluation[i] = new Fint[points_to_evaluate.size()];
         construct_nd_vector_helper(shape_vec_s[i], shape, unit_vec_s[i], units, m, FD[i].prime);
         
-        coeff_data_s[i] = new Fint[pow(max_fft_field - 1, m)];
+        coeff_data_s[i] = new Fint[pow(FD[i].prime, m)];
         Fint* coeff_data = coeff_data_s[i];
         init_coeff_field(coeff_data, arr.getDim(), buf_size);
         
@@ -91,7 +89,7 @@ int evaluate_all_point(const nd_vector<Fint>& arr, const Fint& modulo, const Fin
             for (const Fint& coord : points_to_evaluate[j]) {
                 Fint coord_mod = coord % FD[i].prime;
                 u64 coord_int = mpz2ull(coord_mod);
-                elem = elem[FD[i].rev[mpz2ul(dlog[coord_int])]];
+                elem = (coord_int) ? (elem[FD[i].rev[mpz2ul(dlog[coord_int])]]) : (elem[FD[i].prime - 1]);
             }
             enforce_modulus(elem.get(), FD[i].prime);
             point_evaluation[i][j] = elem.get();

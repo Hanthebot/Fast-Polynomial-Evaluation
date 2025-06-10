@@ -8,7 +8,7 @@ void fft_multivar_wrapper(const Fint* w, nd_vector<Fint>& arr, const u32* rev, u
     Fint*& temp_u_vec, Fint*& temp_v_vec) {
     u32 len = 1ULL << logn;
     for (const auto& s : arr.getShape()) {
-        assert(s == len && "size does not match");
+        assert(s == (len + 1) && "size does not match");
     }
     span<size_t> shape = arr.getShape().subspan(1);
     span<size_t> units = arr.getUnit().subspan(1);
@@ -116,7 +116,7 @@ void fft_multivar_wrapper_NF(const Fint* w, nd_vector<Fint>& arr, const vector<u
     vector<size_t> iter_temp_shape;
     size_t whole_size = arr.size();
     size_t shape_default = arr.getShape()[0];
-    u32 len = shape_default; // prime - 1 
+    u32 len = shape_default - 1; // prime - 1 
     span<size_t> original_shape = arr.getShape();
     for (size_t dim_i = 1; dim_i <= original_shape.size(); ++dim_i) {
         size_t iter_size = whole_size / pow(shape_default, dim_i);

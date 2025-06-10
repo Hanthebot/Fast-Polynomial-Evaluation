@@ -31,7 +31,7 @@ int main(int argc, char* argv[]) {
     // initializing field and consts
     init_setup(modulo, degs_vec, total_len, m);
 
-    compute_M(capital_M, degs_vec, modulo, total_len, m);
+    compute_M(capital_M, degs_vec, modulo);
     // Field my_field = init_setup(logn, len, m, prime);
     // zero_F.setField(&my_field);
     init_evaluation_points(evaluation_points, m, modulo);
