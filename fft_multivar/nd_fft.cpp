@@ -55,7 +55,6 @@ int evaluate_all_point(const nd_vector<Fint>& arr, const Fint& modulo, const Fin
             }
         }
         accumulate_time(start, end, meta.times.precomp);
-        
         // for ease of use
         Fint* w = FD[i].w.data();
         point_evaluation[i] = new Fint[points_to_evaluate.size()];
