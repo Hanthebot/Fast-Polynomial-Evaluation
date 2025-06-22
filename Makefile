@@ -15,7 +15,7 @@ LFLAGS = -std=c++20 -Wall -O3 -c
 OMP = -fopenmp
 GMP = -lgmp -lgmpxx
 OBJS   = gfelement.o galoisfield.o modular_arith.o fft.o util.o
-OBJS_MULT   = nd_fft.o nd_fft_helper.o fft_brute.o fft_compute.o util_math.o util_multivar.o nd_vector.o
+OBJS_MULT   = nd_fft.o nd_fft_helper.o fft_brute.o fft_compute.o util_math.o util_multivar.o nd_vector.o crt_data.o
 
 fft_multivar: fft_multivar/fft_multivar.cpp fft_multivar/fft_multivar.h fft_multivar/nd_fft.h fft_multivar/util.h $(OBJS_MULT)
 	$(CC) $(OMP) $(CFLAGS) fft_multivar fft_multivar/fft_multivar.cpp $(OBJS_MULT) $(GMP)
@@ -49,6 +49,9 @@ modular_arith.o: galois/modular_arith.h galois/modular_arith.cpp galois/typedefs
 
 nd_vector.o: nd_vector/nd_vector.cpp nd_vector/nd_vector.h
 	$(CC) $(OMP) $(LFLAGS) nd_vector/nd_vector.cpp $(GMP)
+
+crt_data.o: fft_multivar/crt_data.cpp fft_multivar/crt_data.h
+	$(CC) $(OMP) $(LFLAGS) fft_multivar/crt_data.cpp $(GMP)
 
 fft_finite: fft_finite/fft_finite.cpp fft_finite/fft_finite.h $(OBJS)
 	$(CC) $(CFLAGS) fft_finite fft_finite/fft_finite.cpp $(OBJS) $(GMP)
