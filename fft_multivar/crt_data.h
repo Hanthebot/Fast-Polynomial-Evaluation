@@ -5,7 +5,20 @@
 #include "field_data.h"
 #include "nd_fft.h"
 #include "util.h"
+#include "field_data.h"
 using namespace std;
+
+struct FieldData {
+    u32 prime;
+    vector<Fint> w;
+    vector<Fint> dlog;
+    vector<Fint> rev;
+    vector<Fint> rev_rev;
+    vector<u32> radix_vec;
+    vector<u32> dist;
+    Fint prime_mp;
+    vector<Fint> rou;
+}
 
 struct CRTData {
     u32 modulo;                   // prime
@@ -14,6 +27,7 @@ struct CRTData {
     vector<u32> fields_used;
     CRTData** subField = nullptr; // subfield data (array)
     FieldData* FD = nullptr; // subfield data (array)
+    map<Fint, FieldData>* Fmap = nullptr;
     Fint M;
     Fint buffer_size = 0;
     vector<u32> interpolate;
@@ -26,7 +40,7 @@ struct CRTData {
     CRTData() = default; // default constructor
 
     // Construct for a single field (leaf node)
-    CRTData(nd_vector<Fint>& arr, u32 prime);
+    CRTData(nd_vector<Fint>& arr, u32 prime, map<Fint, FieldData>* Fmap);
 
     // Recursively count tables
     u32 getTableCount() const;
@@ -43,7 +57,7 @@ struct CRTData {
 
     void checkSpaceOptimum(const span<size_t>& shape);
     void findFieldsCRT();
-    void preprocess();
+    void initialize();
     int preprocess_2(EvalIO& meta, Fint& mul_counter);
     void printTableSize(string st = "") const;
 };

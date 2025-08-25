@@ -1,7 +1,7 @@
 #include "crt_data.h"
 using namespace std;
 
-CRTData::CRTData(nd_vector<Fint>& arr, u32 prime) {
+CRTData::CRTData(nd_vector<Fint>& arr, u32 prime, map<Fint, FieldData>* Fmap) {
     modulo = prime;
     prime_mp = Fint(prime);
     isPrime = mpz_probab_prime_p(prime_mp.get_mpz_t(), 10);
@@ -9,8 +9,25 @@ CRTData::CRTData(nd_vector<Fint>& arr, u32 prime) {
     Fint dim_mp;
     ul2mpz(dim_mp, arr.getDim());
     buffer_size = pow(prime_mp, dim_mp);
+    this->Fmap = Fmap;
+    if (Fmap.find(prime_mp) != Fmap->end()) {
+        FD = &(*Fmap)[prime_mp];
+    } else {
+        FD = new FieldData();
+        FD->prime = prime;
+        ul2mpz(FD->prime_mp, prime);
+        factorize(FD->prime - 1, FD->radix_vec);
+        if (!getRootOfUnity(FD->prime_mp, FD->prime, FD->rou)) {
+            cout << "Error: root of unity not found for field " << prime << endl;
+            exit(2);
+        }
+        rou_init(FD->w, FD->dlog, FD->prime, FD->prime_mp, FD->rou);
+        rev_init(FD->rev, log2(FD->prime - 1));
+        (*Fmap)[FD->prime_mp] = *FD; // store in map
+    }
+    // find rou
     findFieldsCRT();
-    preprocess();
+    initialize();
 }
 
 // Recursively count tables
@@ -127,7 +144,7 @@ void CRTData::findFieldsCRT() {
     }
 }
 
-void CRTData::preprocess() {
+void CRTData::initialize() {
     // create a new nd_vector
     size_t m = coeff->getDim();
     shape_vec.clear();
@@ -145,6 +162,10 @@ void CRTData::preprocess() {
     // i.e. direct computation
     if (fields_used.empty()) return;
     FD = new FieldData[fields_used.size()]; // field data
+    subField = new CRTData*[fields_used.size()];
+    for (size_t i = 0; i < fields_used.size(); ++i) {
+        subField[i] = new CRTData(*preprocessed, fields_used[i]);
+    }
     // set up FD
     for (size_t i = 0; i < fields_used.size(); ++i) {
         FD[i].prime = fields_used[i];
@@ -158,17 +179,18 @@ void CRTData::preprocess() {
     interpolate.resize(fields_used.size());
     for (u32 i = 0; i < fields_used.size(); ++i) {
         Fint temp = common_prod / FD[i].prime_mp;
-        Fint inv = 1; // multInverse(temp % subField[i].prime_mp, subField[i].prime_mp, subField[i].dlog.data(), subField[i].w.data());
+        Fint inv = multInverse(temp % subField[i].prime_mp, subField[i].prime_mp, subField[i].dlog.data(), subField[i].w.data());
         interpolate[i] = mpz2ul(inv * temp);
-    }
-    
-    subField = new CRTData*[fields_used.size()];
-    for (size_t i = 0; i < fields_used.size(); ++i) {
-        subField[i] = new CRTData(*preprocessed, fields_used[i]);
     }
 }
 
 int CRTData::preprocess_2(EvalIO& meta, Fint& mul_counter) {
+    if (fields_used.empty()) {
+        // direct evaluation
+        preprocessed->set_ptr(coeff->ptr());
+        return 0; // success
+    }
+    preprocessed->set_ptr(new Fint[mpz2ull(buffer_size)]);
     // preprocess the data for evaluation
     return 0; // success
 }

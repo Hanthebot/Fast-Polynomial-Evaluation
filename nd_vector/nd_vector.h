@@ -122,6 +122,10 @@ class nd_vector {
                 unit[i] = unit[i - 1] / new_shape[i];
             }
         }
+
+        void set_ptr(T* const new_data) {
+            data = new_data;
+        }
         
         /**
         * @brief Sets the values of the vector to the product of the values of the given vectors.
